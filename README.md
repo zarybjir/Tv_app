@@ -18,15 +18,6 @@ Disney+, Prime Video a Apple TV:
 - **Filtr podle hodnocení:** tlačítka *IMDb* (6+ / 6,5+ / 7+ / 7,5+ / 8+) a *Rotten Tomatoes*
   (60 / 75 / 90 %+) nahoře na domovské obrazovce. Filtr se týká řádků „Populární na …"
   i hledání, ne vlastního seznamu. Tituly bez hodnocení filtr schová.
-- **Země, kde právě jsi:** tlačítko *Jsem v:* nahoře. Buď automaticky podle připojení, nebo
-  ručně. Naposledy použité země jsou v seznamu nahoře.
-  - **V EU** ti služby díky přenositelnosti předplatného (nařízení EU 2017/1128) ukazují
-    katalog z domova. Promítárna to ví a dál ukazuje domácí katalog.
-  - **Mimo EU** ukáže, co jde sledovat tam. Tituly ze seznamu „Chci vidět", které tam nejdou,
-    ztlumí, a v detailu napíše, kde běží doma.
-  - Domov (zemi předplatného) nastavíš v *Nastavení → Země*.
-  - Promítárna jen ukazuje, co kde jde sledovat. Co ti služby opravdu pustí, určují podle
-    připojení, takže tohle nastavení nic neodemkne.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Skok rovnou na titul:** tlačítko „▶ Netflix" otevře film nebo seriál přímo v aplikaci
   služby, ne její úvodní obrazovku. U seriálu tě služba pustí tam, kde jsi skončil.
@@ -45,8 +36,8 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 - **nepřehraje video sama.** Videa služeb jsou chráněná a pustí je jen jejich vlastní
   aplikace. Promítárna tě do nich přepne, nejlépe rovnou na vybraný titul.
 
-Údaje o tom, co kde běží, pochází z TMDB (data JustWatch) a můžou být o den či dva pozadu.
-Zemi připojení zjišťuje Promítárna přes veřejnou adresu `cloudflare.com/cdn-cgi/trace`.
+Údaje o tom, co kde běží, pochází z TMDB (data JustWatch) pro zemi z `js/config.js`
+(výchozí Česko) a můžou být o den či dva pozadu.
 
 ---
 
@@ -183,7 +174,7 @@ Funguje i ukazovátko (Smart Remote nebo myš).
 config.xml       manifest Tizen aplikace (oprávnění: internet, spouštění aplikací)
 index.html       vstup
 css/style.css    vzhled pro 1920×1080
-js/config.js     TMDB, OMDb a Watchmode klíč, domov, jazyk  ← upravit
+js/config.js     TMDB, OMDb a Watchmode klíč, země, jazyk  ← upravit
 js/services.js   seznam služeb, jejich barvy, TMDB ID a ID aplikací v TV
 js/boot.js       zavaděč: vybere nainstalovanou nebo staženou verzi, stahuje aktualizace
 js/version.js    verze přibalená v instalaci

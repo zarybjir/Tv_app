@@ -12,7 +12,7 @@ window.PROMITARNA_CONFIG = {
   // na titul ve službě. Bez něj se otevře jen úvodní obrazovka služby.
   watchmodeKey: '',
 
-  // Domov – země, kde máš předplatné (jde změnit i v aplikaci v Nastavení → Země).
+  // Země, kde máš předplatné – podle ní se zjišťuje, co kde běží.
   region: 'CZ',
 
   // Jazyk názvů a popisů.
