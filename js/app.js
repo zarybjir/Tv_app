@@ -30,7 +30,12 @@
     KEY_NAMES.forEach(function (n) { if (k[n]) CFG[n] = k[n]; });
   })();
 
+  // domovská obrazovka se při návratu překreslí jen tehdy, když se změnilo něco, co na ní je
+  var homeDirty = true;
+  var DIRTY_KEYS = ['watchlist', 'hidden', 'settings', 'keys', 'arrivals'];
+
   function save(key, val) {
+    if (DIRTY_KEYS.indexOf(key) >= 0) homeDirty = true;
     try { localStorage.setItem('promitarna.' + key, JSON.stringify(val)); } catch (e) { /* plné úložiště */ }
   }
 
@@ -170,8 +175,49 @@
     screens[name] = { name: name, el: $('screen-' + name), render: render, lastFocus: null };
   }
 
+  // ------------------------------------------------------------------ pamatování pozice (posun obrazovky a řádků)
+  var homeRestore = null;
+  function captureScroll(root) {
+    var st = { v: [], h: {} };
+    Array.prototype.forEach.call(root.querySelectorAll('.vscroll'), function (v) { st.v.push(v.scrollTop); });
+    Array.prototype.forEach.call(root.querySelectorAll('.row[data-row]'), function (r) {
+      var hs = r.querySelector('.hscroll');
+      if (hs) st.h[r.getAttribute('data-row')] = hs.scrollLeft;
+    });
+    return st;
+  }
+  function restoreScroll(root, st) {
+    if (!st) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.row[data-row]'), function (r) {
+      var hs = r.querySelector('.hscroll'), x = st.h[r.getAttribute('data-row')];
+      if (hs && x != null) hs.scrollLeft = x;
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('.vscroll'), function (v, i) { if (st.v[i] != null) v.scrollTop = st.v[i]; });
+  }
+  // řádky se po překreslení načítají postupně – pozici dorovnávej, dokud uživatel sám nezačne posouvat
+  function reapplyHomeScroll() {
+    if (homeRestore && homeRestore.active && currentScreen === screens.home) restoreScroll(screens.home.el, homeRestore.st);
+  }
+  function stopHomeRestore() { if (homeRestore) homeRestore.active = false; }
+  ['touchstart', 'wheel', 'mousedown'].forEach(function (ev) { document.addEventListener(ev, stopHomeRestore, true); });
+
+  function reactivate(name, lastFocus) {
+    Object.keys(screens).forEach(function (k) { screens[k].el.classList.remove('active'); });
+    currentScreen = screens[name];
+    currentScreen.el.classList.add('active');
+    if (focused) focused.classList.remove('focus');
+    focused = null;
+    restoreScroll(currentScreen.el, currentScreen.scrollState);
+    var el = lastFocus && document.body.contains(lastFocus) ? lastFocus : focusablesIn(currentScreen.el)[0];
+    if (el) {
+      if (MOBILE) { focused = el; el.classList.add('focus'); currentScreen.lastFocus = el; }
+      else setFocus(el);
+    }
+  }
+
   function go(name, params, opts) {
     opts = opts || {};
+    if (currentScreen) currentScreen.scrollState = captureScroll(currentScreen.el);
     if (currentScreen && !opts.replace) history.push({ name: currentScreen.name, params: currentScreen.params, lastFocus: currentScreen.lastFocus });
     show(name, params, null);
   }
@@ -196,16 +242,22 @@
     var prev = history.pop();
     if (prev.name === 'search') {
       // hledání se nepřekresluje – zůstanou výsledky i pozice
-      Object.keys(screens).forEach(function (k) { screens[k].el.classList.remove('active'); });
-      currentScreen = screens.search;
-      currentScreen.el.classList.add('active');
+      reactivate('search', prev.lastFocus);
       Array.prototype.slice.call(currentScreen.el.querySelectorAll('.card[data-key]')).forEach(markHidden);
-      if (focused) focused.classList.remove('focus');
-      focused = null;
-      setFocus(prev.lastFocus || focusablesIn(currentScreen.el)[0]);
       return;
     }
+    if (prev.name === 'home' && !homeDirty && screens.home.el.firstChild) {
+      // nic se nezměnilo – vrať se přesně tam, kde jsi byl
+      reactivate('home', prev.lastFocus);
+      return;
+    }
+    var keep = prev.name === 'home' ? screens.home.scrollState : null;
     show(prev.name, prev.params, null); // znovu vykresli (mohl se změnit seznam/nastavení)
+    if (keep) {
+      homeRestore = { st: keep, active: true };
+      setTimeout(function () { if (homeRestore && homeRestore.st === keep) homeRestore.active = false; }, 10000);
+      reapplyHomeScroll();
+    }
     // obnov fokus na stejný prvek podle data-fid
     var fid = prev.lastFocus && prev.lastFocus.getAttribute('data-fid');
     if (fid) {
@@ -722,7 +774,7 @@
   }
 
   function row(title, sub, content) {
-    return h('div', { class: 'row' }, [
+    return h('div', { class: 'row', 'data-row': title }, [
       h('h2', null, [title, sub ? h('small', { text: sub }) : null]),
       content
     ]);
@@ -921,6 +973,7 @@
       });
       slot.appendChild(row('Nové díly a řady', 'seriály, které chceš vidět nebo jsi viděl · zelené = viděl jsem i nové', r));
       restorePendingFocus();
+      reapplyHomeScroll();
     });
   }
 
@@ -1039,6 +1092,7 @@
 
   defineScreen('home', function (root) {
     clear(root);
+    homeDirty = false;
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
     root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), setBtn]));
@@ -1112,6 +1166,7 @@
         r.appendChild(h('div', { class: 'card morecard focusable', 'data-fid': fidPrefix + 'more', onselect: openAll },
           [h('div', { class: 'poster' }, [h('div', { class: 'ph', text: 'Zobrazit vše ›' })])]));
         restorePendingFocus();
+        reapplyHomeScroll();
       }).catch(function (err) {
         clear(r);
         rowEl.replaceChild(h('div', { class: 'note', text: errorText(err) }), r);
@@ -1378,10 +1433,12 @@
       if (res.others.length) info.appendChild(h('div', { class: 'also', text: 'V předplatném také na: ' + res.others.join(', ') }));
       if (res.rent.length) info.appendChild(h('div', { class: 'also', text: 'K pronájmu nebo koupi: ' + res.rent.slice(0, 6).join(', ') }));
       // aktualizuj odznaky v uloženém seznamu
+      var ids = res.mine.map(function (s) { return s.id; });
+      var changed = false;
       watchlist.forEach(function (w) {
-        if (w.key === item.key) w.services = res.mine.map(function (s) { return s.id; });
+        if (w.key === item.key && (w.services || []).join() !== ids.join()) { w.services = ids; changed = true; }
       });
-      save('watchlist', watchlist);
+      if (changed) save('watchlist', watchlist);
       if (firstPlay && focused === listBtn) setFocus(firstPlay);
     }).catch(function (err) {
       loading.textContent = errorText(err);
@@ -1846,6 +1903,7 @@
 
   // ------------------------------------------------------------------ klávesy
   document.addEventListener('keydown', function (e) {
+    stopHomeRestore();
     if (e.target && e.target.tagName === 'INPUT') {
       if (e.keyCode === KEY.ENTER) e.target.blur();
       return;
