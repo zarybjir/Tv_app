@@ -1,6 +1,6 @@
 {
-  "version": "1.9.0",
+  "version": "1.10.0",
   "minShell": 1,
-  "notes": "Videotéka je teď i v mobilu (Android).",
+  "notes": "U seriálů výběr série a dílů s pamětí, kde jsi skončil. Nový řádek Nově přidáno.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

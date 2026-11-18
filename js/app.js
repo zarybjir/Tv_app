@@ -283,6 +283,7 @@
   function content() {
     var c = settings._content;
     if (!c) c = settings._content = { series: true, movies: true, trending: true, byService: false, cats: {} };
+    if (c.newest === undefined) c.newest = true;
     CATEGORIES.forEach(function (cat) { if (c.cats[cat.id] === undefined) c.cats[cat.id] = cat.on; });
     return c;
   }
@@ -321,6 +322,8 @@
       var mp = Object.assign({}, p, { page: n }), tp = Object.assign({}, p, { page: n });
       if (opts.movie) mp.with_genres = opts.movie;
       if (opts.tv) tp.with_genres = opts.tv;
+      if (opts.extraMovie) Object.assign(mp, opts.extraMovie);
+      if (opts.extraTv) Object.assign(tp, opts.extraTv);
       reqs.push(wantMovie ? tmdb('/discover/movie', mp) : Promise.resolve({ results: [] }));
       reqs.push(wantTv ? tmdb('/discover/tv', tp) : Promise.resolve({ results: [] }));
     });
@@ -839,6 +842,18 @@
     toast((reason === 'seen' ? 'Viděno: ' : 'Skryto: ') + item.title + ' · žluté tlačítko vrátí');
   }
 
+  // ------------------------------------------------------------------ kde jsem v seriálu skončil
+  var progress = load('progress', {}); // { 'tv:123': { s: 2, e: 3, t } }
+  function epLabel(s, e) { return s + '×' + (e < 10 ? '0' : '') + e; }
+  function setProgress(item, s, e) {
+    progress[item.key] = { s: s, e: e, t: Date.now() };
+    save('progress', progress);
+  }
+  function isWatched(item, s, e) {
+    var p = progress[item.key];
+    return !!p && (s < p.s || (s === p.s && e <= p.e));
+  }
+
   // ------------------------------------------------------------------ nové díly a řady
   function trackedSeries() {
     var list = watchlist.filter(function (w) { return w.type === 'tv'; }).map(function (w) { return { item: w, base: null }; });
@@ -968,14 +983,15 @@
 
   // ------------------------------------------------------------------ pořadí řádků
   function rowDefs() {
-    return [{ id: 'news', name: 'Nové díly a řady' }, { id: 'watchlist', name: 'Chci vidět' }, { id: 'trending', name: 'Nejpopulárnější' }]
+    return [{ id: 'news', name: 'Nové díly a řady' }, { id: 'watchlist', name: 'Chci vidět' }, { id: 'newest', name: 'Nově přidáno' }, { id: 'trending', name: 'Nejpopulárnější' }]
       .concat(CATEGORIES.map(function (cat) { return { id: 'cat:' + cat.id, name: cat.name }; }))
       .concat([{ id: 'byService', name: 'Podle služeb' }]);
   }
   function rowOrder() {
     var c = content(), ids = rowDefs().map(function (d) { return d.id; });
     var order = (c.order || []).filter(function (id) { return ids.indexOf(id) >= 0; });
-    ids.forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
+    // nové řádky vlož na jejich výchozí místo
+    ids.forEach(function (id, i) { if (order.indexOf(id) < 0) order.splice(Math.min(i, order.length), 0, id); });
     c.order = order;
     return order;
   }
@@ -983,6 +999,7 @@
     var c = content();
     if (id === 'news' || id === 'watchlist') return true;
     if (id === 'trending') return c.trending;
+    if (id === 'newest') return c.newest;
     if (id === 'byService') return c.byService;
     return !!c.cats[id.slice(4)];
   }
@@ -1116,6 +1133,15 @@
         return;
       }
       if (!canDiscover || !isRowOn(id)) return;
+      if (id === 'newest') {
+        var day = function (n) { return new Date(Date.now() - n * DAY).toISOString().slice(0, 10); };
+        addRow('Nově přidáno', 'nové filmy a seriály s novými díly na tvých službách', 'new-', {
+          providers: providers, movie: '', tv: '',
+          extraMovie: { 'primary_release_date.gte': day(120), 'primary_release_date.lte': day(0), 'vote_count.gte': 5 },
+          extraTv: { 'air_date.gte': day(30), 'air_date.lte': day(0) }
+        });
+        return;
+      }
       if (id === 'trending') { addRow('Nejpopulárnější na tvých službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '' }); return; }
       if (id === 'byService') {
         enabledServices().forEach(function (s) {
@@ -1292,6 +1318,14 @@
       }
     });
     var loading = h('div', { class: 'also', text: 'Zjišťuji dostupnost…' });
+    var epBtn = null;
+    if (item.type === 'tv' && CFG.tmdbKey) {
+      var pr = progress[item.key];
+      epBtn = h('div', { class: 'btn secondary focusable', 'data-fid': 'd-episodes',
+        text: 'Série a díly' + (pr ? ' · naposledy ' + epLabel(pr.s, pr.e) : ''),
+        onselect: function () { go('episodes', { item: item }); } });
+      actions.appendChild(epBtn);
+    }
     actions.appendChild(listBtn);
     var dbtn = function (fid, label, fn) {
       actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': fid, text: label, onselect: fn }));
@@ -1328,7 +1362,7 @@
           class: 'btn play focusable', style: gradient(s), 'data-fid': 'd-play-' + s.id,
           text: '▶  ' + s.name, onselect: function () { playTitle(s, item); }
         });
-        actions.insertBefore(b, listBtn);
+        actions.insertBefore(b, epBtn || listBtn);
         if (!firstPlay) firstPlay = b;
       });
       if (!res.mine.length) info.appendChild(h('div', { class: 'unavailable', text: 'Na tvých službách teď není.' }));
@@ -1445,6 +1479,7 @@
     ]));
     wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Řádky' }),
+      chip('set-c-new', 'Nově přidáno', c.newest, function () { return (c.newest = !c.newest); }),
       chip('set-c-trend', 'Nejpopulárnější', c.trending, function () { return (c.trending = !c.trending); }),
       chip('set-c-svc', 'Podle služeb', c.byService, function () { return (c.byService = !c.byService); }),
       h('div', { class: 'btn focusable', 'data-fid': 'set-order', text: 'Pořadí řádků…', onselect: function () { go('order'); } })
@@ -1519,6 +1554,114 @@
     ]));
     wrap.appendChild(h('div', { style: 'height:160px' }));
     return first;
+  });
+
+  // ------------------------------------------------------------------ SÉRIE A DÍLY
+  defineScreen('episodes', function (root, params) {
+    clear(root);
+    var item = params.item;
+    root.appendChild(topbar([h('div', { class: 'eptitle', text: item.title })]));
+    var wrap = h('div', { class: 'episodes' });
+    var seasonsEl = h('div', { class: 'seasons vscroll' });
+    var listWrap = h('div', { class: 'eplist vscroll' });
+    wrap.appendChild(seasonsEl);
+    wrap.appendChild(listWrap);
+    root.appendChild(wrap);
+    seasonsEl.appendChild(h('div', { class: 'sinfo', text: 'Načítám série…' }));
+
+    var services = [];
+    providersFor(item).then(function (res) { services = res.mine; }).catch(function () {});
+    var today = new Date().toISOString().slice(0, 10);
+    var curSeason = null;
+
+    function play(ep) {
+      setProgress(item, ep.season_number, ep.episode_number);
+      markList();
+      var s = services[0];
+      if (!s) { toast('Seriál teď na tvých službách není, díl ' + epLabel(ep.season_number, ep.episode_number) + ' jsem si poznamenal.'); return; }
+      playTitle(s, item);
+      toast('Otevírám ' + s.name + ' – pusť díl ' + epLabel(ep.season_number, ep.episode_number) + (ep.name ? ' „' + ep.name + '"' : ''));
+    }
+    function markList() {
+      Array.prototype.forEach.call(listWrap.querySelectorAll('.ep'), function (el) {
+        var sN = +el.getAttribute('data-s'), eN = +el.getAttribute('data-e');
+        el.classList.toggle('watched', isWatched(item, sN, eN));
+      });
+      var nextEl = Array.prototype.filter.call(listWrap.querySelectorAll('.ep'), function (el) { return !el.classList.contains('watched') && !el.classList.contains('future'); })[0];
+      Array.prototype.forEach.call(listWrap.querySelectorAll('.ep.next'), function (el) { el.classList.remove('next'); });
+      if (nextEl && progress[item.key]) nextEl.classList.add('next');
+      return nextEl;
+    }
+
+    function loadSeason(n, focusEpisodes) {
+      curSeason = n;
+      Array.prototype.forEach.call(seasonsEl.querySelectorAll('.season'), function (el) {
+        el.classList.toggle('cur', +el.getAttribute('data-s') === n);
+      });
+      clear(listWrap);
+      listWrap.scrollTop = 0;
+      listWrap.appendChild(h('div', { class: 'sinfo', text: 'Načítám díly…' }));
+      tmdb('/tv/' + item.id + '/season/' + n).then(function (d) {
+        if (curSeason !== n) return;
+        clear(listWrap);
+        (d.episodes || []).forEach(function (ep) {
+          var future = ep.air_date && ep.air_date > today;
+          var meta = [];
+          if (ep.air_date) meta.push((future ? 'vyjde ' : '') + fmtDate(ep.air_date) + ' ' + ep.air_date.slice(0, 4));
+          if (ep.runtime) meta.push(ep.runtime + ' min');
+          var el = h('div', { class: 'ep focusable' + (future ? ' future' : ''), 'data-fid': 'ep-' + n + '-' + ep.episode_number,
+            'data-s': n, 'data-e': ep.episode_number }, [
+            h('div', { class: 'still' }, [ep.still_path ? h('img', { src: IMG + 'w300' + ep.still_path, alt: '' }) : null,
+              h('div', { class: 'epcheck', text: '✓' })]),
+            h('div', { class: 'eptext' }, [
+              h('div', { class: 'epname', text: epLabel(n, ep.episode_number) + '  ' + (ep.name || '') }),
+              h('div', { class: 'epmeta', text: meta.join(' · ') }),
+              h('div', { class: 'epov', text: ep.overview || '' })
+            ])
+          ]);
+          el._select = function () { play(ep); };
+          listWrap.appendChild(el);
+        });
+        if (!(d.episodes || []).length) listWrap.appendChild(h('div', { class: 'sinfo', text: 'K téhle sérii nejsou díly.' }));
+        listWrap.appendChild(h('div', { style: 'height:200px' }));
+        var nextEl = markList();
+        if (focusEpisodes) setFocus(nextEl || listWrap.querySelector('.ep'));
+      }).catch(function (err) {
+        clear(listWrap);
+        listWrap.appendChild(h('div', { class: 'sinfo', text: errorText(err) }));
+      });
+    }
+
+    tvInfo(item).then(function (d) {
+      clear(seasonsEl);
+      var seasons = (d.seasons || []).filter(function (x) { return x.episode_count > 0; })
+        .sort(function (a, b) { return (a.season_number || 999) - (b.season_number || 999); }); // speciály na konec
+      var first = null, want = null, pr = progress[item.key];
+      seasons.forEach(function (x) {
+        var el = h('div', { class: 'season pitem focusable', 'data-fid': 'season-' + x.season_number, 'data-s': x.season_number },
+          [x.season_number ? x.season_number + '. série' : 'Speciály', h('small', { text: x.episode_count + ' dílů' })]);
+        el._select = function () { loadSeason(x.season_number, false); };
+        seasonsEl.appendChild(el);
+        if (!first && x.season_number) first = el;
+        if (pr && x.season_number === pr.s) want = el;
+      });
+      if (!MOBILE) seasonsEl.appendChild(h('div', { style: 'height:120px' }));
+      var start = want || first || seasonsEl.querySelector('.season');
+      if (!start) { seasonsEl.appendChild(h('div', { class: 'sinfo', text: 'Série nejsou k dispozici.' })); return; }
+      var sN = +start.getAttribute('data-s');
+      // když je v rozkoukané sérii všechno viděné, otevři další
+      if (pr && want) {
+        var cur = seasons.filter(function (x) { return x.season_number === pr.s; })[0];
+        var nxt = seasons.filter(function (x) { return x.season_number === pr.s + 1; })[0];
+        if (cur && pr.e >= cur.episode_count && nxt) sN = nxt.season_number;
+      }
+      if (currentScreen === screens.episodes) setFocus(seasonsEl.querySelector('[data-s="' + sN + '"]'));
+      loadSeason(sN, !!pr);
+    }).catch(function (err) {
+      clear(seasonsEl);
+      seasonsEl.appendChild(h('div', { class: 'sinfo', text: errorText(err) }));
+    });
+    return null;
   });
 
   // ------------------------------------------------------------------ POŘADÍ ŘÁDKŮ

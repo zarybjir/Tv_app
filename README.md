@@ -21,6 +21,13 @@ Disney+, Prime Video a Apple TV:
   - **žluté** = vrátit poslední skrytí.
   
   Totéž je i v detailu titulu. Skryté tituly najdeš a vrátíš v *Nastavení → Skryté*.
+- **Série a díly:** u seriálu otevři *Série a díly*. Uvidíš série a u každého dílu název,
+  datum, délku, popis a obrázek. Výběrem dílu se seriál otevře ve službě a Videotéka si
+  zapamatuje, kde jsi skončil: viděné díly mají ✓ a další na řadě je zvýrazněný. Na konkrétní
+  díl služby skočit nedovolí, ten pustíš v jejich aplikaci.
+- **Nově přidáno:** řádek s novými filmy (poslední 4 měsíce) a seriály, kterým za poslední
+  měsíc vyšel díl, pokud běží na tvých službách. Starší tituly, které službě přibyly do
+  katalogu, v něm nejsou, protože tenhle údaj žádná bezplatná databáze nedává.
 - **Nové díly a řady:** u seriálů ze seznamu „Chci vidět" a u seriálů označených jako viděné
   ukáže štítek *Nová řada 3*, *Nové díly* nebo *Další díl 1. 12.* Až nové díly dokoukáš,
   dej na seriálu znovu zelené tlačítko.
