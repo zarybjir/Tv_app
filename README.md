@@ -1,5 +1,7 @@
 # Videotéka — jedna obrazovka pro všechny streamovací služby
 
+Pro **televize Samsung** a **telefony s Androidem** (viz [Mobilní aplikace](#mobilní-aplikace-android)).
+
 Aplikace pro televize **Samsung (Tizen, modely od roku 2018)**. Spojuje Netflix, HBO Max,
 Disney+, Prime Video a Apple TV:
 
@@ -175,6 +177,25 @@ Videotéka hledá aplikace v televizi podle názvu. Když některou nenajde (na 
 „nenalezeno v TV"), otevři **Nastavení → Aplikace: …** a vyber ji ze seznamu všech
 nainstalovaných aplikací. Tlačítkem **Vyzkoušet** ověříš, že se spustí.
 
+## Mobilní aplikace (Android)
+
+Stejná Videotéka, jen pro telefon: ovládá se dotykem a hledá se klávesnicí telefonu.
+**Přehrát** otevře rovnou titul v aplikaci služby. Na Androidu to funguje spolehlivěji
+než v televizi, ale potřebuje Watchmode klíč.
+
+**Instalace:**
+1. Na GitHubu otevři *Actions → Mobilní aplikace (APK)*, poslední úspěšný běh a dole
+   v *Artifacts* stáhni **videoteka-apk**.
+2. V ZIPu je `Videoteka.apk`. Pošli si ho do telefonu a otevři. Telefon se zeptá, jestli
+   povolit instalaci z neznámých zdrojů – povol.
+3. Ve Videotéce otevři *Nastavení → Klíče* a vlož klíče TMDB, OMDb a Watchmode. Zůstávají
+   jen v telefonu.
+
+Obsah aplikace se aktualizuje sám, stejně jako v televizi. Nové APK je potřeba jen při
+změně samotného obalu. Aby šlo nainstalovat přes staré bez ztráty dat, nastav podpisový
+klíč (secrets `VIDEOTEKA_*`, popsané v `.github/workflows/apk.yml`). Může být stejný jako
+u Ženisty.
+
 ## Ovládání
 
 | Tlačítko | Akce |
@@ -196,6 +217,7 @@ js/services.js   seznam služeb, jejich barvy, TMDB ID a ID aplikací v TV
 js/boot.js       zavaděč: vybere nainstalovanou nebo staženou verzi, stahuje aktualizace
 js/version.js    verze přibalená v instalaci
 version.json     nejnovější verze pro aktualizace (čtou ji televize)
+mobile/          obal mobilní aplikace (Android, WebView)
 js/app.js        celá logika: navigace ovladačem, obrazovky, TMDB, spouštění aplikací
 ```
 

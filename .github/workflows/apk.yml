@@ -1,0 +1,75 @@
+# Sestavení mobilní aplikace (Android APK). Bez nastavených secrets vznikne debug APK
+# podepsaná náhodným klíčem běžce – novou verzi APK pak nejde nainstalovat přes starou.
+# (Na tom moc nezáleží: obsah aplikace se aktualizuje sám, nové APK je potřeba jen výjimečně.)
+#
+# Secrets (Settings > Secrets and variables > Actions), klidně stejný klíč jako u Ženisty:
+#   VIDEOTEKA_KEYSTORE_B64       base64 souboru .jks  (base64 -w0 release.jks)
+#   VIDEOTEKA_KEYSTORE_PASSWORD
+#   VIDEOTEKA_KEY_ALIAS
+#   VIDEOTEKA_KEY_PASSWORD
+#
+# Tag "v1.0.0" navíc vytvoří GitHub Release s APK – z toho umí aktualizovat Obtainium.
+name: Mobilní aplikace (APK)
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      KS_B64: ${{ secrets.VIDEOTEKA_KEYSTORE_B64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Keystore
+        if: env.KS_B64 != ''
+        run: |
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "VIDEOTEKA_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build
+        env:
+          VIDEOTEKA_KEYSTORE_PASSWORD: ${{ secrets.VIDEOTEKA_KEYSTORE_PASSWORD }}
+          VIDEOTEKA_KEY_ALIAS: ${{ secrets.VIDEOTEKA_KEY_ALIAS }}
+          VIDEOTEKA_KEY_PASSWORD: ${{ secrets.VIDEOTEKA_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          TASK=:mobile:assembleDebug
+          if [ -n "${VIDEOTEKA_KEYSTORE:-}" ]; then TASK=:mobile:assembleRelease; fi
+          set +e
+          ./gradlew --no-daemon --console=plain "$TASK" > build.log 2>&1
+          rc=$?
+          set -e
+          cat build.log
+          if [ $rc -ne 0 ]; then
+            msg=$(grep -E "^e: |error:|What went wrong|Could not|> |FAILURE|Caused by" build.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Gradle build failed::${msg}"
+            exit $rc
+          fi
+          mkdir -p out
+          cp mobile/build/outputs/apk/*/*.apk out/Videoteka.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: videoteka-apk
+          path: out/Videoteka.apk
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/Videoteka.apk

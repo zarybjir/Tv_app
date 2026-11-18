@@ -1,6 +1,6 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "minShell": 1,
-  "notes": "Aplikace se teď jmenuje Videotéka.",
+  "notes": "Videotéka je teď i v mobilu (Android).",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

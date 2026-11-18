@@ -6,3 +6,11 @@
 .sign/
 author-signature.xml
 signature1.xml
+.gradle/
+build/
+mobile/build/
+local.properties
+.idea/
+*.iml
+*.jks
+*.keystore

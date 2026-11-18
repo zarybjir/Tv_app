@@ -243,3 +243,118 @@ html, body {
 .side-help {
   position: absolute; left: 1180px; top: 220px; width: 640px; color: var(--muted); font-size: 25px; line-height: 38px;
 }
+
+/* =====================================================================
+   MOBIL (třída .mobile na <html>) – na televizi se nic z toho nepoužije
+   ===================================================================== */
+html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
+.mobile .screen { width: 100%; height: 100%; }
+.mobile .screen.active { display: flex; flex-direction: column; }
+.mobile .vscroll, .mobile .search-wrap, .mobile .results, .mobile .settings, .mobile .picker {
+  position: relative; left: auto; right: auto; top: auto !important; bottom: auto; width: auto;
+}
+.mobile .vscroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.mobile .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.mobile .hscroll::-webkit-scrollbar, .mobile .vscroll::-webkit-scrollbar { display: none; }
+.mobile .focus { transform: none !important; }
+
+/* horní lišta */
+.mobile .topbar { height: auto; padding: 14px 16px 6px; flex-wrap: wrap; flex: none; }
+.mobile .brand { font-size: 26px; }
+.mobile .topbar .spacer { flex-basis: 100%; height: 8px; }
+.mobile .clock { display: none; }
+.mobile .pill { padding: 7px 13px; margin: 0 8px 8px 0; font-size: 15px; }
+.mobile .pill.focus { background: var(--panel); color: var(--text); }
+.mobile .pill.on, .mobile .pill.on.focus { background: var(--accent); color: #000; }
+
+/* řádky a plakáty */
+.mobile .row { margin-bottom: 14px; }
+.mobile .row h2 { font-size: 18px; padding: 0 16px 4px; }
+.mobile .row h2 small { font-size: 13px; margin-left: 6px; }
+.mobile .row .hscroll { padding: 8px 16px 10px; }
+.mobile .row .note { padding: 0 16px; font-size: 14px; }
+.mobile .tile { width: 132px; height: 76px; margin-right: 10px; border-radius: 12px; }
+.mobile .tile .tname { left: 12px; bottom: 9px; font-size: 16px; }
+.mobile .tile .tbig { font-size: 44px; right: 8px; top: 2px; letter-spacing: -2px; }
+.mobile .tile .tstate { font-size: 11px; left: 10px; top: 8px; padding: 2px 6px; }
+.mobile .tile.focus { box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+.mobile .card { width: 112px; margin-right: 10px; }
+.mobile .card .poster { width: 112px; height: 168px; border-radius: 10px; }
+.mobile .card .poster .ph { font-size: 13px; padding: 8px; }
+.mobile .card .ctitle { margin-top: 6px; font-size: 13px; line-height: 17px; height: 34px; }
+.mobile .card.focus .poster { box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+.mobile .card.focus .ctitle { color: var(--muted); }
+.mobile .badge { font-size: 10px; padding: 2px 5px; border-radius: 5px; margin-right: 3px; }
+.mobile .card .badges { left: 5px; top: 5px; }
+.mobile .rchip { font-size: 10px; padding: 2px 5px; border-radius: 5px; margin: 3px 3px 0 0; }
+.mobile .card .rbar { left: 4px; right: 4px; bottom: 4px; }
+.mobile .newtag { font-size: 11px; top: 26px; left: 4px; right: 4px; padding: 3px 2px; border-radius: 6px; }
+.mobile .awaytag { font-size: 11px; top: 64px; left: 5px; right: 5px; padding: 4px; }
+.mobile .card.clearcard .ph { font-size: 15px; }
+.mobile .banner { margin: 0 16px 14px; padding: 12px 14px; font-size: 14px; line-height: 20px; border-radius: 12px; }
+
+/* hledání */
+.mobile .search-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mobile .kbd { position: static; width: auto; padding: 0 16px 10px; }
+.mobile .minput {
+  width: 100%; font-size: 17px; padding: 12px 14px; border-radius: 12px; border: 0; outline: 0;
+  background: var(--panel); color: var(--text); font-family: inherit; -webkit-appearance: none;
+}
+.mobile .results { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mobile .results .vscroll { padding: 0 6px 0 16px; }
+.mobile .results .msg { font-size: 15px; }
+.mobile .results .msg.small { font-size: 13px; }
+.mobile .results .card { margin-bottom: 14px; }
+
+/* detail */
+.mobile #screen-detail.active { display: block; overflow-y: auto; }
+.mobile .backdrop, .mobile .backdrop-fade { width: 100%; height: 300px; }
+.mobile .detail-body { position: relative; left: auto; top: auto; right: auto; display: block; padding: 70px 16px 40px; }
+.mobile .detail-body .dposter { width: 120px; height: 180px; border-radius: 12px; }
+.mobile .detail-info { margin: 16px 0 0; max-width: none; }
+.mobile .detail-info h1 { font-size: 26px; line-height: 31px; }
+.mobile .detail-info .meta { font-size: 15px; margin-top: 6px; }
+.mobile .detail-info .overview { font-size: 15px; line-height: 22px; max-height: none; margin-top: 14px; }
+.mobile .detail-info h3 { font-size: 13px; margin-top: 20px; }
+.mobile .dratings { margin-top: 12px; min-height: 0; }
+.mobile .dratings .rchip { font-size: 14px; padding: 5px 9px; border-radius: 8px; margin: 0 8px 6px 0; }
+.mobile .dratings .votes { font-size: 13px; margin-right: 10px; }
+.mobile .btn { font-size: 16px; padding: 11px 16px; margin: 0 8px 8px 0; border-radius: 12px; }
+.mobile .btn.focus { box-shadow: none; }
+.mobile .btn.secondary.focus { background: var(--panel); color: var(--text); }
+.mobile .also, .mobile .unavailable { font-size: 14px; }
+.mobile .hintbar { display: none; }
+.mobile .feedback { display: none; }
+
+/* nastavení */
+.mobile .settings { flex: 1; padding: 0 16px; }
+.mobile .shead { font-size: 13px; margin: 14px 0 8px; }
+.mobile .srow { flex-wrap: wrap; padding: 12px; margin-bottom: 10px; border-radius: 12px; }
+.mobile .srow .sname { width: 100%; font-size: 17px; margin-bottom: 8px; }
+.mobile .srow .sdot { width: 12px; height: 12px; margin-right: 10px; margin-bottom: 8px; }
+.mobile .srow .sdot + .sname { width: auto; flex: 1; }
+.mobile .srow .btn { font-size: 14px; padding: 8px 12px; margin: 0 8px 8px 0; }
+.mobile .srow .btn.focus { background: var(--panel); color: var(--text); }
+.mobile .srow .btn.chip { margin: 0 6px 6px 0; }
+.mobile .srow .btn.chip.on, .mobile .srow .btn.chip.on.focus { background: #2c3546; color: var(--text); opacity: 1; }
+.mobile .srow .btn.chip.focus { opacity: .6; }
+.mobile .srow .sver { font-size: 13px; max-width: none; width: 100%; }
+.mobile .sinfo { font-size: 13px; line-height: 19px; margin: 6px 0 12px; }
+.mobile .keys .keyrow { display: block; width: 100%; margin-bottom: 10px; }
+.mobile .keys .keyrow span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.mobile .keys .minput { font-size: 14px; padding: 10px 12px; background: var(--bg); }
+
+/* seznamy (výběr aplikace, pořadí, skryté) */
+.mobile .picker { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 16px; }
+.mobile .picker h2 { font-size: 19px; margin-bottom: 10px; }
+.mobile .picker .vscroll { top: auto; }
+.mobile .pitem { font-size: 16px; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; }
+.mobile .pitem small { font-size: 12px; margin-left: 8px; }
+.mobile .pitem.focus { background: var(--bg2); color: var(--text); }
+.mobile .pitem.focus small { color: var(--muted); }
+.mobile .pitem .mvs { margin-left: auto; }
+.mobile .pitem .mv { display: inline-block; width: 40px; height: 34px; line-height: 34px; text-align: center; margin-left: 6px; border-radius: 8px; background: #2c3546; font-size: 14px; }
+.mobile .side-help { position: static; width: auto; font-size: 13px; line-height: 19px; padding: 8px 16px 16px; flex: none; }
+
+/* hlášky */
+.mobile #toast { width: auto; left: 16px; right: 16px; margin-left: 0; bottom: 20px; font-size: 15px; padding: 12px 16px; border-radius: 12px; }
