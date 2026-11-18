@@ -1022,7 +1022,51 @@
     return listBtn;
   });
 
+  // ------------------------------------------------------------------ AKTUALIZACE
+  var UPD = window.PromitarnaUpdate || null;
+  var updateState = null; // výsledek poslední kontroly
+
+  function updateLabel() {
+    if (!UPD) return 'nedostupné';
+    if (UPD.pendingVersion()) return 'verze ' + UPD.pendingVersion() + ' připravená';
+    if (!updateState) return 'zatím nekontrolováno';
+    if (updateState.checking) return 'kontroluji…';
+    switch (updateState.status) {
+      case 'latest': return 'máš nejnovější verzi';
+      case 'reinstall': return 'verze ' + updateState.version + ' vyžaduje přeinstalovat';
+      case 'bad': return 'verze ' + updateState.version + ' nenaběhla, čekám na opravu';
+      case 'error': return 'kontrola selhala (' + updateState.message + ')';
+      default: return '';
+    }
+  }
+
+  function checkUpdates(manual) {
+    if (!UPD) return Promise.resolve();
+    updateState = { checking: true };
+    return UPD.check().then(function (res) {
+      updateState = res;
+      if (res.status === 'ready') toast('Nová verze ' + res.version + ' je připravená' + (res.notes ? ': ' + res.notes : '') + '. Použije se při dalším spuštění.');
+      else if (res.status === 'reinstall') toast('Verze ' + res.version + ' potřebuje znovu nainstalovat aplikaci (viz README).');
+      else if (manual) toast('Máš nejnovější verzi ' + UPD.version + '.');
+    }).catch(function (err) {
+      updateState = { status: 'error', message: err.message };
+      if (manual) toast('Aktualizace se nepodařilo zkontrolovat: ' + err.message);
+    });
+  }
+
+  function autoCheckUpdates() {
+    if (!UPD || !UPD.auto()) return;
+    if (Date.now() - UPD.lastCheck() < 6 * 3600 * 1000) return;
+    checkUpdates(false);
+  }
+
   // ------------------------------------------------------------------ NASTAVENÍ
+  function refreshSettings(fid) {
+    show('settings', {}, null);
+    var el = screens.settings.el.querySelector('[data-fid="' + fid + '"]') ||
+      screens.settings.el.querySelector('[data-fid^="set-upd-"]');
+    if (el) setFocus(el);
+  }
   function deepLabel(s) {
     var st = svcSettings(s), m = st.deep || 'auto';
     if (m === 'auto') return st.deepOk ? 'funguje (' + DEEP_LABEL[st.deepOk] + ')' : 'automaticky';
@@ -1082,6 +1126,22 @@
       h('div', { class: 'btn focusable', 'data-fid': 'set-loc', text: 'Teď jsem v: ' + locationLabel(),
         onselect: function () { go('region', { mode: 'location' }); } })
     ]));
+
+    if (UPD) {
+      var pend = UPD.pendingVersion();
+      var updBtns = [
+        h('div', { class: 'sver', text: 'Verze ' + UPD.version + (UPD.downloaded ? ' (stažená)' : '') + ' · ' + updateLabel() }),
+        pend
+          ? h('div', { class: 'btn focusable', 'data-fid': 'set-upd-restart', text: 'Restartovat na ' + pend, onselect: function () { UPD.restart(); } })
+          : h('div', { class: 'btn focusable', 'data-fid': 'set-upd-check', text: 'Zkontrolovat',
+              onselect: function () { checkUpdates(true).then(function () { if (currentScreen === screens.settings) refreshSettings('set-upd-check'); }); } }),
+        h('div', { class: 'btn focusable', 'data-fid': 'set-upd-auto', text: 'Automaticky: ' + (UPD.auto() ? 'ano' : 'ne'),
+          onselect: function () { UPD.auto(!UPD.auto()); refreshSettings('set-upd-auto'); } })
+      ];
+      if (UPD.downloaded) updBtns.push(h('div', { class: 'btn focusable', 'data-fid': 'set-upd-reset', text: 'Vrátit verzi ' + UPD.bundled,
+        onselect: function () { UPD.reset(); } }));
+      wrap.appendChild(h('div', { class: 'srow' }, [h('div', { class: 'sname', text: 'Aktualizace' })].concat(updBtns)));
+    }
 
     wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Chci vidět' }),
@@ -1262,6 +1322,9 @@
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
     if (pendingFeedback) setTimeout(askFeedback, 400);
+    // připravená aktualizace se nasadí po návratu do aplikace, pokud jsi na domovské obrazovce
+    if (UPD && UPD.pendingVersion() && currentScreen === screens.home && !pendingFeedback) { UPD.restart(); return; }
+    autoCheckUpdates();
     detectApps(function () {});
     var before = REGION + where();
     detectCountry(function () {
@@ -1274,7 +1337,15 @@
 
   // ------------------------------------------------------------------ start
   var pending = 2;
-  function ready() { if (--pending === 0) go('home'); }
+  function ready() {
+    if (--pending !== 0) return;
+    go('home');
+    if (UPD) {
+      UPD.ready();
+      if (UPD.notice) toast(UPD.notice);
+      setTimeout(autoCheckUpdates, 4000);
+    }
+  }
   detectApps(ready);
   detectCountry(ready);
 })();

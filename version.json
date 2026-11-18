@@ -1,0 +1,6 @@
+{
+  "version": "1.4.0",
+  "minShell": 1,
+  "notes": "Aplikace se teď aktualizuje sama.",
+  "files": ["css/style.css", "js/services.js", "js/app.js"]
+}

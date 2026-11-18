@@ -1,0 +1,17 @@
+name: Kontrola vydání
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  kontrola:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/kontrola-vydani.js

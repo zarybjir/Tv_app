@@ -130,6 +130,29 @@ tizen install -n <vzniklý-soubor>.wgt -t <jméno-zařízení-ze-sdb-devices>
 > Certifikát z vývojářského režimu platí zhruba rok. Potom aplikaci stačí znovu nahrát
 > stejným postupem.
 
+## Aktualizace
+
+Aplikaci stačí do televize nahrát jednou. Další verze si stahuje sama z tohoto repozitáře:
+
+- **Kontrola:** při spuštění, nejvýš jednou za 6 hodin, a ručně v *Nastavení → Aktualizace*.
+- **Stažení:** nová verze se stáhne a uloží v televizi.
+- **Nasazení:** použije se při příštím spuštění, nebo hned po návratu z Netflixu apod.,
+  když jsi na domovské obrazovce. Jednou se pak ukáže, co je nového.
+- **Pojistka:** když nová verze nenaběhne, Promítárna se při dalším spuštění sama vrátí
+  k nainstalované verzi. Ručně to jde přes *Vrátit verzi* v nastavení.
+- **Klíče** v `js/config.js` se aktualizací nikdy nepřepíšou.
+
+Znovu nahrát přes Tizen Studio je potřeba jen tehdy, když aktualizace mění oprávnění nebo
+zavaděč (`version.json` → `minShell`; aplikace na to upozorní), a když vyprší certifikát
+(zhruba po roce).
+
+**Vydání nové verze:** zvyš číslo ve `version.json` i v `js/version.js` a pushni do `main`.
+GitHub Action *Kontrola vydání* ověří, že kód jde přeložit, že je verze zvýšená a že
+v `js/config.js` nezůstal vyplněný klíč.
+
+> ⚠️ Repozitář je veřejný. Klíče vyplňuj jen v kopii, kterou nahráváš do televize,
+> a necommituj je.
+
 ## 3. Když nejde spustit některá služba
 
 Promítárna hledá aplikace v televizi podle názvu. Když některou nenajde (na dlaždici je
@@ -154,6 +177,9 @@ index.html       vstup
 css/style.css    vzhled pro 1920×1080
 js/config.js     TMDB, OMDb a Watchmode klíč, domov, jazyk  ← upravit
 js/services.js   seznam služeb, jejich barvy, TMDB ID a ID aplikací v TV
+js/boot.js       zavaděč: vybere nainstalovanou nebo staženou verzi, stahuje aktualizace
+js/version.js    verze přibalená v instalaci
+version.json     nejnovější verze pro aktualizace (čtou ji televize)
 js/app.js        celá logika: navigace ovladačem, obrazovky, TMDB, spouštění aplikací
 ```
 
