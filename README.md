@@ -127,8 +127,11 @@ Samsung povoluje vlastní aplikace jen přes vývojářský režim. Nastavuje se
 6. Otevři *Tools → Certificate Manager → +* a zvol **Samsung**, typ **TV**. Přihlas se
    Samsung účtem a nech vytvořit autorský i distributorský certifikát. Distributorský
    certifikát se váže k připojené televizi (DUID se doplní sám).
-7. Otevři *File → Import → Tizen → Tizen Project* a vyber tuto složku. Potom klikni pravým
-   tlačítkem na projekt a zvol *Run As → Tizen Web Application*.
+7. V Tizen Studiu založ projekt: *File → New → Tizen Project → Template → TV → Web Application
+   → Basic Project*, pojmenuj ho `Videoteka`. Ve složce projektu smaž vygenerované soubory
+   kromě `.project`, `.tproject` a `.settings` a nakopíruj tam obsah tohoto repozitáře
+   (`config.xml`, `index.html`, `icon.png`, `version.json`, složky `css` a `js`).
+   Pak klikni na projekt pravým tlačítkem a zvol *Run As → Tizen Web Application*.
 
 Videotéka se objeví mezi aplikacemi v televizi. Doporučuju si ji připnout na domovskou lištu.
 
