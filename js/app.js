@@ -1,4 +1,4 @@
-/* Promítárna – jedna domovská obrazovka pro Netflix, HBO Max, Disney+, Prime Video a Apple TV.
+/* Videotéka – jedna domovská obrazovka pro Netflix, HBO Max, Disney+, Prime Video a Apple TV.
    Psáno v ES2015 bez async/await, aby to běželo na Samsung TV od roku 2018 (Tizen 4+). */
 'use strict';
 (function () {
@@ -505,7 +505,7 @@
 
   // ------------------------------------------------------------------ skok rovnou na titul
   // Samsung nezveřejňuje, jaká data aplikace služeb přijímají, proto jsou tu tři způsoby.
-  // Po návratu z aplikace se Promítárna zeptá, jestli se otevřel titul, a podle odpovědi
+  // Po návratu z aplikace se Videotéka zeptá, jestli se otevřel titul, a podle odpovědi
   // si zapamatuje fungující způsob, nebo zkusí další.
   var DEEP_METHODS = ['view', 'payload', 'payload-json'];
   var DEEP_DEFAULT = { netflix: 'payload-json' };
@@ -695,7 +695,7 @@
 
   function topbar(extra) {
     return h('div', { class: 'topbar' }, [
-      h('div', { class: 'brand' }, ['Promít', h('span', { text: 'árna' })]),
+      h('div', { class: 'brand' }, ['Video', h('span', { text: 'téka' })]),
       h('div', { class: 'spacer' })
     ].concat(extra || []).concat([clock()]));
   }
@@ -1495,7 +1495,7 @@
     var sc = h('div', { class: 'vscroll' });
     wrap.appendChild(sc);
     root.appendChild(wrap);
-    root.appendChild(h('div', { class: 'side-help', text: 'OK vrátí titul zpátky do nabídky. Viděné seriály Promítárna dál hlídá a ukáže ti jejich nové díly.' }));
+    root.appendChild(h('div', { class: 'side-help', text: 'OK vrátí titul zpátky do nabídky. Viděné seriály Videotéka dál hlídá a ukáže ti jejich nové díly.' }));
     var keys = Object.keys(hiddenItems).sort(function (a, b) { return hiddenItems[b].t - hiddenItems[a].t; });
     if (!keys.length) sc.appendChild(h('div', { class: 'sinfo', text: 'Nemáš žádné skryté tituly.' }));
     keys.forEach(function (k) {

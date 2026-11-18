@@ -1,4 +1,4 @@
-/* Zavaděč Promítárny s automatickými aktualizacemi.
+/* Zavaděč Videotéky s automatickými aktualizacemi.
    Nainstalovaný balíček obsahuje záložní kopii aplikace. Novější verze se stahují z GitHubu
    (soubor version.json v repozitáři), ukládají v televizi a použijí se při dalším spuštění.
    js/config.js (klíče) se nikdy nestahuje ani nepřepisuje. */

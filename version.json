@@ -1,6 +1,6 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "minShell": 1,
-  "notes": "Skrývání titulů (červené a zelené tlačítko), pořadí řádků, nové díly seriálů a upozornění na tituly, které přibyly na tvé služby.",
+  "notes": "Aplikace se teď jmenuje Videotéka.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

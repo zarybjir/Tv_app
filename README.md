@@ -1,4 +1,4 @@
-# Promítárna — jedna obrazovka pro všechny streamovací služby
+# Videotéka — jedna obrazovka pro všechny streamovací služby
 
 Aplikace pro televize **Samsung (Tizen, modely od roku 2018)**. Spojuje Netflix, HBO Max,
 Disney+, Prime Video a Apple TV:
@@ -39,7 +39,7 @@ Disney+, Prime Video a Apple TV:
 - **Detail titulu:** popis, hodnocení a tlačítka „▶ Netflix", „▶ HBO Max"… Kromě toho
   ukáže, kde je titul v jiném předplatném nebo k pronájmu.
 - **Chci vidět:** vlastní seznam napříč službami, uložený v televizi.
-- **Nastavení:** zapnutí a vypnutí služeb a ruční výběr aplikace, kdyby ji Promítárna
+- **Nastavení:** zapnutí a vypnutí služeb a ruční výběr aplikace, kdyby ji Videotéka
   nenašla sama.
 
 ### Co aplikace neumí
@@ -48,7 +48,7 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 
 - **nevidí „Pokračovat ve sledování"** ani tvou historii,
 - **nepřehraje video sama.** Videa služeb jsou chráněná a pustí je jen jejich vlastní
-  aplikace. Promítárna tě do nich přepne, nejlépe rovnou na vybraný titul.
+  aplikace. Videotéka tě do nich přepne, nejlépe rovnou na vybraný titul.
 
 Údaje o tom, co kde běží, pochází z TMDB (data JustWatch) pro zemi z `js/config.js`
 (výchozí Česko) a můžou být o den či dva pozadu.
@@ -95,7 +95,7 @@ Dotaz se posílá jen po stisku „▶" a odkaz se pamatuje 30 dní, takže limi
 
 ### Jak se skok „naučí"
 
-Samsung nezveřejňuje, jak aplikacím služeb předat konkrétní titul. Promítárna proto zná tři
+Samsung nezveřejňuje, jak aplikacím služeb předat konkrétní titul. Videotéka proto zná tři
 způsoby. Po návratu z aplikace se zeptá: **„Otevřel se rovnou titul?"**
 
 - **Ano:** zapamatuje si, že tenhle způsob u té služby funguje, a víc se neptá.
@@ -130,7 +130,7 @@ Samsung povoluje vlastní aplikace jen přes vývojářský režim. Nastavuje se
 7. Otevři *File → Import → Tizen → Tizen Project* a vyber tuto složku. Potom klikni pravým
    tlačítkem na projekt a zvol *Run As → Tizen Web Application*.
 
-Promítárna se objeví mezi aplikacemi v televizi. Doporučuju si ji připnout na domovskou lištu.
+Videotéka se objeví mezi aplikacemi v televizi. Doporučuju si ji připnout na domovskou lištu.
 
 ### Totéž z příkazové řádky
 
@@ -151,7 +151,7 @@ Aplikaci stačí do televize nahrát jednou. Další verze si stahuje sama z toh
 - **Stažení:** nová verze se stáhne a uloží v televizi.
 - **Nasazení:** použije se při příštím spuštění, nebo hned po návratu z Netflixu apod.,
   když jsi na domovské obrazovce. Jednou se pak ukáže, co je nového.
-- **Pojistka:** když nová verze nenaběhne, Promítárna se při dalším spuštění sama vrátí
+- **Pojistka:** když nová verze nenaběhne, Videotéka se při dalším spuštění sama vrátí
   k nainstalované verzi. Ručně to jde přes *Vrátit verzi* v nastavení.
 - **Klíče** v `js/config.js` se aktualizací nikdy nepřepíšou.
 
@@ -168,7 +168,7 @@ v `js/config.js` nezůstal vyplněný klíč.
 
 ## 3. Když nejde spustit některá služba
 
-Promítárna hledá aplikace v televizi podle názvu. Když některou nenajde (na dlaždici je
+Videotéka hledá aplikace v televizi podle názvu. Když některou nenajde (na dlaždici je
 „nenalezeno v TV"), otevři **Nastavení → Aplikace: …** a vyber ji ze seznamu všech
 nainstalovaných aplikací. Tlačítkem **Vyzkoušet** ověříš, že se spustí.
 

@@ -1,4 +1,4 @@
-/* Promítárna – rozvržení pro 1920×1080, ovládání ovladačem.
+/* Videotéka – rozvržení pro 1920×1080, ovládání ovladačem.
    Bez CSS gridu a flex `gap`, aby to běželo i na starších Tizenech. */
 
 :root {
