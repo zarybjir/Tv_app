@@ -282,10 +282,51 @@
     };
   }
 
-  function discoverFor(service) {
+  // ------------------------------------------------------------------ kategorie
+  // movie/tv = žánry TMDB (oddělené | znamená „nebo"), null = typ v kategorii není
+  var CATEGORIES = [
+    { id: 'krimi', name: 'Krimi', movie: '80', tv: '80', on: true },
+    { id: 'thriller', name: 'Thrillery a záhady', movie: '53|9648', tv: '9648', on: true },
+    { id: 'fantasy', name: 'Fantasy', movie: '14', tv: '10765', on: true },
+    { id: 'scifi', name: 'Sci-fi', movie: '878', tv: '10765', on: true },
+    { id: 'akcni', name: 'Akční', movie: '28', tv: '10759', on: true },
+    { id: 'komedie', name: 'Komedie', movie: '35', tv: '35', on: true },
+    { id: 'drama', name: 'Drama', movie: '18', tv: '18', on: true },
+    { id: 'dobrodruzne', name: 'Dobrodružné', movie: '12', tv: '10759', on: false },
+    { id: 'horor', name: 'Horory', movie: '27', tv: null, on: false },
+    { id: 'romanticke', name: 'Romantické', movie: '10749', tv: null, on: false },
+    { id: 'animovane', name: 'Animované', movie: '16', tv: '16', on: true },
+    { id: 'rodinne', name: 'Rodinné a pro děti', movie: '10751', tv: '10751|10762', on: false },
+    { id: 'dokumenty', name: 'Dokumenty', movie: '99', tv: '99', on: true },
+    { id: 'historicke', name: 'Válečné a historické', movie: '10752|36', tv: '10768', on: false },
+    { id: 'reality', name: 'Reality show', movie: null, tv: '10764', on: false },
+    { id: 'westerny', name: 'Westerny', movie: '37', tv: '37', on: false }
+  ];
+
+  function content() {
+    var c = settings._content;
+    if (!c) c = settings._content = { series: true, movies: true, trending: true, byService: false, cats: {} };
+    CATEGORIES.forEach(function (cat) { if (c.cats[cat.id] === undefined) c.cats[cat.id] = cat.on; });
+    return c;
+  }
+  function typesLabel(cat) {
+    var c = content(), t = [];
+    if (c.series && (!cat || cat.tv)) t.push('seriály');
+    if (c.movies && (!cat || cat.movie)) t.push('filmy');
+    return t.join(' a ');
+  }
+  function allProviders() {
+    var out = [];
+    enabledServices().forEach(function (s) { out = out.concat(s.providers); });
+    return out;
+  }
+
+  // opts: { providers: [...], movie: 'žánry'|''|null, tv: 'žánry'|''|null }
+  function discover(opts) {
+    var c = content();
     var p = {
       watch_region: REGION,
-      with_watch_providers: service.providers.join('|'),
+      with_watch_providers: opts.providers.join('|'),
       with_watch_monetization_types: 'flatrate',
       sort_by: 'popularity.desc'
     };
@@ -296,10 +337,15 @@
       p['vote_count.gte'] = 50;
       if (filt().imdb) p['vote_average.gte'] = Math.max(0, filt().imdb - 1.5);
     }
+    var wantMovie = c.movies && opts.movie !== null;
+    var wantTv = c.series && opts.tv !== null;
     var reqs = [];
     pages.forEach(function (n) {
-      reqs.push(tmdb('/discover/movie', Object.assign({}, p, { page: n })));
-      reqs.push(tmdb('/discover/tv', Object.assign({}, p, { page: n })));
+      var mp = Object.assign({}, p, { page: n }), tp = Object.assign({}, p, { page: n });
+      if (opts.movie) mp.with_genres = opts.movie;
+      if (opts.tv) tp.with_genres = opts.tv;
+      reqs.push(wantMovie ? tmdb('/discover/movie', mp) : Promise.resolve({ results: [] }));
+      reqs.push(wantTv ? tmdb('/discover/tv', tp) : Promise.resolve({ results: [] }));
     });
     return Promise.all(reqs).then(function (res) {
       var m = [], t = [], out = [];
@@ -794,22 +840,36 @@
       body.appendChild(row('Chci vidět', watchlist.length + ' titulů', wl));
     }
 
-    // populární na každé službě
-    enabledServices().forEach(function (s) {
+    // řádky podle kategorií (a volitelně podle služeb)
+    var c = content();
+    function addRow(title, sub, fidPrefix, opts, serviceIds) {
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
-      var rowEl = row('Populární na ' + s.name, filterActive() ? 'filtr ' + filterLabel() + ' · ověřuji hodnocení…' : null, r);
+      var subText = function (extra) { return [sub, filterActive() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
+      var rowEl = row(title, subText(filterActive() ? ' · ověřuji hodnocení…' : ''), r);
       body.appendChild(rowEl);
-      discoverFor(s).then(applyFilter).then(function (res) {
+      discover(opts).then(applyFilter).then(function (res) {
         var items = res.items.slice(0, 24);
-        var sub = rowEl.querySelector('h2 small');
-        if (sub) sub.textContent = 'filtr ' + filterLabel() + (res.hidden ? ' · skryto ' + res.hidden : '');
+        var small = rowEl.querySelector('h2 small');
+        if (small) small.textContent = subText(res.hidden ? ' · skryto ' + res.hidden : '');
         clear(r);
         if (!items.length) {
-          rowEl.replaceChild(h('div', { class: 'note', text: 'Nic populárního nesplňuje filtr ' + filterLabel() + '.' }), r);
+          rowEl.replaceChild(h('div', { class: 'note', text: filterActive() ? 'Nic nesplňuje filtr ' + filterLabel() + '.' : 'Na tvých službách tu teď nic není.' }), r);
           return;
         }
-        items.forEach(function (it) { r.appendChild(card(it, 'pop-' + s.id + '-' + it.key, [s.id])); });
+        items.forEach(function (it, idx) {
+          var cardEl = card(it, fidPrefix + it.key, serviceIds);
+          r.appendChild(cardEl);
+          if (!serviceIds) {
+            // u kategorií zjisti, na které službě titul běží: hned u viditelných, ostatní až při najetí
+            var done = false;
+            var badge = function () {
+              if (done) return; done = true;
+              providersFor(it).then(function (pr) { setBadges(cardEl, pr.mine); }).catch(function () {});
+            };
+            if (idx < 8) badge(); else cardEl._focus = badge;
+          }
+        });
         if (currentScreen === screens.home && currentScreen.pendingFid) {
           var el = root.querySelector('[data-fid="' + currentScreen.pendingFid + '"]');
           if (el) { setFocus(el); currentScreen.pendingFid = null; }
@@ -818,7 +878,21 @@
         clear(r);
         rowEl.replaceChild(h('div', { class: 'note', text: errorText(err) }), r);
       });
-    });
+    }
+
+    var providers = allProviders();
+    if (!c.series && !c.movies) {
+      body.appendChild(h('div', { class: 'banner', text: 'V Nastavení → Obsah máš vypnuté seriály i filmy, takže tu nic není.' }));
+    } else if (providers.length) {
+      if (c.trending) addRow('Nejpopulárnější na tvých službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '' });
+      CATEGORIES.forEach(function (cat) {
+        if (!c.cats[cat.id] || !typesLabel(cat)) return;
+        addRow(cat.name, typesLabel(cat), 'cat-' + cat.id + '-', { providers: providers, movie: cat.movie, tv: cat.tv });
+      });
+      if (c.byService) enabledServices().forEach(function (s) {
+        addRow('Populární na ' + s.name, typesLabel(), 'pop-' + s.id + '-', { providers: s.providers, movie: '', tv: '' }, [s.id]);
+      });
+    }
 
     body.appendChild(h('div', { style: 'height:120px' }));
     return first || searchBtn;
@@ -1075,9 +1149,38 @@
   defineScreen('settings', function (root) {
     clear(root);
     root.appendChild(topbar([]));
-    var wrap = h('div', { class: 'settings' });
+    var wrap = h('div', { class: 'settings vscroll' });
     root.appendChild(wrap);
     var first = null;
+    // obsah domovské obrazovky
+    var c = content();
+    function chip(fid, label, on, toggle) {
+      var el = h('div', { class: 'btn chip focusable' + (on ? ' on' : ''), 'data-fid': fid, text: (on ? '✓ ' : '') + label,
+        onselect: function () {
+          var now = toggle();
+          save('settings', settings);
+          el.textContent = (now ? '✓ ' : '') + label;
+          el.classList.toggle('on', now);
+        } });
+      return el;
+    }
+    wrap.appendChild(h('div', { class: 'shead', text: 'Obsah domovské obrazovky' }));
+    wrap.appendChild(h('div', { class: 'srow' }, [
+      h('div', { class: 'sname', text: 'Typ' }),
+      chip('set-c-series', 'Seriály', c.series, function () { return (c.series = !c.series); }),
+      chip('set-c-movies', 'Filmy', c.movies, function () { return (c.movies = !c.movies); })
+    ]));
+    wrap.appendChild(h('div', { class: 'srow' }, [
+      h('div', { class: 'sname', text: 'Řádky' }),
+      chip('set-c-trend', 'Nejpopulárnější', c.trending, function () { return (c.trending = !c.trending); }),
+      chip('set-c-svc', 'Podle služeb', c.byService, function () { return (c.byService = !c.byService); })
+    ]));
+    first = wrap.querySelector('.chip');
+    var catChips = CATEGORIES.map(function (cat) {
+      return chip('set-cat-' + cat.id, cat.name, c.cats[cat.id], function () { return (c.cats[cat.id] = !c.cats[cat.id]); });
+    });
+    wrap.appendChild(h('div', { class: 'srow wrap' }, [h('div', { class: 'sname', text: 'Kategorie' }), h('div', { class: 'chips' }, catChips)]));
+    wrap.appendChild(h('div', { class: 'shead', text: 'Služby' }));
 
     SERVICES.forEach(function (s) {
       var st = svcSettings(s);
@@ -1111,7 +1214,6 @@
         class: 'btn focusable', 'data-fid': 'set-test-' + s.id, text: 'Vyzkoušet',
         onselect: function () { launchService(s); }
       });
-      if (!first) first = toggle;
       wrap.appendChild(h('div', { class: 'srow' }, [
         h('div', { class: 'sdot', style: 'background:' + s.colors[0] }),
         h('div', { class: 'sname', text: s.name }),
@@ -1126,6 +1228,7 @@
       h('div', { class: 'btn focusable', 'data-fid': 'set-loc', text: 'Teď jsem v: ' + locationLabel(),
         onselect: function () { go('region', { mode: 'location' }); } })
     ]));
+
 
     if (UPD) {
       var pend = UPD.pendingVersion();
@@ -1158,6 +1261,7 @@
       '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (js/config.js)' }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
+    wrap.appendChild(h('div', { style: 'height:160px' }));
     return first;
   });
 

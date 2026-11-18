@@ -153,7 +153,7 @@ html, body {
 .results .msg { color: var(--muted); font-size: 30px; padding-top: 10px; }
 
 /* ---------- nastavení ---------- */
-.settings { position: absolute; left: 96px; top: 150px; right: 96px; bottom: 0; }
+.settings { position: absolute; left: 96px; top: 140px; right: 96px; bottom: 0; padding-top: 10px; }
 .srow {
   display: flex; align-items: center; padding: 18px 28px; margin-bottom: 16px;
   background: var(--bg2); border-radius: 18px;
@@ -227,3 +227,12 @@ html, body {
 
 /* ---------- aktualizace ---------- */
 .srow .sver { font-size: 22px; color: var(--muted); margin-right: 20px; max-width: 520px; }
+
+/* ---------- kategorie v nastavení ---------- */
+.shead { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin: 18px 0 14px; }
+.srow.wrap { align-items: flex-start; }
+.srow.wrap .sname { padding-top: 10px; }
+.chips { flex: 1; }
+.srow .btn.chip { margin: 0 14px 14px 0; opacity: .6; }
+.srow .btn.chip.on { opacity: 1; background: #2c3546; color: var(--text); box-shadow: inset 0 0 0 2px var(--accent); }
+.srow .btn.chip.focus { opacity: 1; background: var(--focus); color: #000; }

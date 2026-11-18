@@ -4,7 +4,15 @@ Aplikace pro televize **Samsung (Tizen, modely od roku 2018)**. Spojuje Netflix,
 Disney+, Prime Video a Apple TV:
 
 - **Moje služby:** dlaždice, které jedním stiskem OK spustí aplikaci služby.
-- **Populární na …:** u každé služby řádek s tím, co se na ní teď nejvíc sleduje (v Česku).
+- **Kategorie:** domovská obrazovka je rozdělená do řádků podle žánrů (Krimi, Thrillery
+  a záhady, Fantasy, Sci-fi, Akční, Komedie, Drama, Animované, Dokumenty…). Každý řádek
+  obsahuje jen to, co běží na tvých službách. Štítek na plakátu ukazuje, na které službě.
+- **Co chceš vidět:** v *Nastavení → Obsah domovské obrazovky* zapneš nebo vypneš:
+  - **seriály a filmy**,
+  - **jednotlivé kategorie** (16 žánrů),
+  - řádek **Nejpopulárnější**,
+  - **řádky podle služeb** („Populární na Netflix" apod.).
+- **Plakáty:** skutečné plakáty filmů a seriálů z TMDB.
 - **Hodnocení IMDb a Rotten Tomatoes** u každého plakátu, v detailu navíc počet hlasů
   a Metacritic.
 - **Filtr podle hodnocení:** tlačítka *IMDb* (6+ / 6,5+ / 7+ / 7,5+ / 8+) a *Rotten Tomatoes*
