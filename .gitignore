@@ -1,0 +1,8 @@
+*.wgt
+.project
+.tproject
+.settings/
+.buildResult/
+.sign/
+author-signature.xml
+signature1.xml
