@@ -496,6 +496,134 @@
     })();
   }
 
+  // ------------------------------------------------------------------ skok rovnou na titul
+  // Samsung nezveřejňuje, jaká data aplikace služeb přijímají, proto jsou tu tři způsoby.
+  // Po návratu z aplikace se Promítárna zeptá, jestli se otevřel titul, a podle odpovědi
+  // si zapamatuje fungující způsob, nebo zkusí další.
+  var DEEP_METHODS = ['view', 'payload', 'payload-json'];
+  var DEEP_DEFAULT = { netflix: 'payload-json' };
+  var DEEP_LABEL = { auto: 'automaticky', view: 'způsob 1', payload: 'způsob 2', 'payload-json': 'způsob 3', off: 'vypnuto' };
+  var linkCache = load('links', {}); // { 'movie:123': { t, links: { netflix: { CZ: url } } } }
+  var pendingFeedback = null;
+
+  function deepMethod(service) {
+    var st = svcSettings(service);
+    if (st.deep && st.deep !== 'auto') return st.deep;
+    return st.deepOk || DEEP_DEFAULT[service.id] || 'view';
+  }
+
+  function titleLinks(item) {
+    var c = linkCache[item.key];
+    if (c && Date.now() - c.t < 30 * DAY) return Promise.resolve(c.links);
+    if (!CFG.watchmodeKey) return Promise.resolve(null);
+    var url = 'https://api.watchmode.com/v1/title/' + item.type + '-' + item.id + '/sources/?apiKey=' + encodeURIComponent(CFG.watchmodeKey);
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('Watchmode HTTP ' + r.status);
+      return r.json();
+    }).then(function (arr) {
+      var links = {};
+      (Array.isArray(arr) ? arr : []).forEach(function (src) {
+        if (!src.web_url || ['sub', 'free', 'tve'].indexOf(src.type) < 0) return;
+        var sv = SERVICES.filter(function (x) { return x.watchmode.test(src.name || ''); })[0];
+        if (!sv) return;
+        links[sv.id] = links[sv.id] || {};
+        links[sv.id][src.region || '*'] = src.web_url;
+      });
+      linkCache[item.key] = { t: Date.now(), links: links };
+      var keys = Object.keys(linkCache);
+      if (keys.length > 600) {
+        keys.sort(function (a, b) { return linkCache[a].t - linkCache[b].t; });
+        keys.slice(0, keys.length - 500).forEach(function (k) { delete linkCache[k]; });
+      }
+      save('links', linkCache);
+      return links;
+    });
+  }
+
+  function pickLink(links, service) {
+    var m = links && links[service.id];
+    if (!m) return null;
+    return m[REGION] || m[HOME] || m['*'] || m[Object.keys(m)[0]] || null;
+  }
+
+  function buildControl(method, service, url) {
+    var T = window.tizen;
+    var data = function (k, v) { return new T.ApplicationControlData(k, [v]); };
+    if (method === 'view') {
+      return new T.ApplicationControl('http://tizen.org/appcontrol/operation/view', url, null, null, [data('PAYLOAD', url)]);
+    }
+    if (method === 'payload') {
+      return new T.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null,
+        [data('PAYLOAD', url), data('url', url), data('deeplink', url)]);
+    }
+    // payload-json: formát, který používá Samsung u Netflixu; ostatním služba pošle odkaz v JSONu
+    var nf = /netflix\.com\/(?:[a-z-]+\/)?(?:title|watch)\/(\d+)/.exec(url);
+    var payload = nf
+      ? JSON.stringify({ values: JSON.stringify({ moduleName: 'common', query: 'm=' + nf[1] + '&source_type=4' }) })
+      : JSON.stringify({ values: JSON.stringify({ url: url, deeplink: url }) });
+    return new T.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null, [data('PAYLOAD', payload)]);
+  }
+
+  function deepLaunch(service, url, item) {
+    var method = deepMethod(service);
+    var ids = candidateIds(service), i = 0;
+    (function tryNext() {
+      if (i >= ids.length) { launchService(service); return; }
+      var id = ids[i++];
+      try {
+        window.tizen.application.launchAppControl(buildControl(method, service, url), id, function () {
+          if (!svcSettings(service).deepOk) pendingFeedback = { service: service, method: method, item: item };
+        }, tryNext, null);
+      } catch (e) { tryNext(); }
+    })();
+  }
+
+  function playTitle(service, item) {
+    if (deepMethod(service) === 'off' || !CFG.watchmodeKey || !CFG.tmdbKey) { launchService(service); return; }
+    toast('Otevírám „' + item.title + '" v ' + service.name + '…');
+    titleLinks(item).then(function (links) {
+      var url = pickLink(links, service);
+      if (!url) { toast('Přímý odkaz na titul v ' + service.name + ' nemám, otevírám aplikaci.'); launchService(service); return; }
+      if (!IS_TV) { toast('V televizi bych otevřel ' + service.name + ' rovnou na ' + url); return; }
+      deepLaunch(service, url, item);
+    }).catch(function (err) {
+      toast('Odkaz se nepodařilo zjistit (' + err.message + '), otevírám aplikaci.');
+      launchService(service);
+    });
+  }
+
+  // po návratu z aplikace: otevřel se titul?
+  function askFeedback() {
+    var fb = pendingFeedback;
+    pendingFeedback = null;
+    if (!fb || currentScreen !== screens.detail) return;
+    var info = currentScreen.el.querySelector('.detail-info');
+    if (!info || info.querySelector('.feedback')) return;
+    var st = svcSettings(fb.service);
+    var box = h('div', { class: 'feedback' });
+    var yes = h('div', { class: 'btn secondary focusable', 'data-fid': 'fb-yes', text: 'Ano',
+      onselect: function () {
+        st.deepOk = fb.method; st.deep = 'auto'; st.deepTried = [];
+        save('settings', settings); toast('Super, u ' + fb.service.name + ' si to pamatuju.');
+        info.removeChild(box); setFocus(info.querySelector('.btn.play') || info.querySelector('.focusable'));
+      } });
+    var no = h('div', { class: 'btn secondary focusable', 'data-fid': 'fb-no', text: 'Ne, jen úvodní obrazovka',
+      onselect: function () {
+        var tried = (st.deepTried || []).concat([fb.method]);
+        var next = DEEP_METHODS.filter(function (m) { return tried.indexOf(m) < 0; })[0];
+        st.deepTried = tried;
+        st.deep = next || 'off';
+        save('settings', settings);
+        toast(next ? 'Příště zkusím u ' + fb.service.name + ' ' + DEEP_LABEL[next] + '.' : 'Přímý skok u ' + fb.service.name + ' nefunguje, budu otevírat jen aplikaci.');
+        info.removeChild(box); setFocus(info.querySelector('.btn.play') || info.querySelector('.focusable'));
+      } });
+    box.appendChild(h('div', { class: 'fbq', text: 'Otevřel se v ' + fb.service.name + ' rovnou „' + fb.item.title + '"?' }));
+    box.appendChild(yes);
+    box.appendChild(no);
+    info.appendChild(box);
+    setFocus(yes);
+  }
+
   // ------------------------------------------------------------------ seznam „Chci vidět"
   function inWatchlist(item) { return watchlist.some(function (w) { return w.key === item.key; }); }
   function toggleWatchlist(item, services) {
@@ -834,7 +962,7 @@
       h('div', { class: 'dposter' }, [item.poster ? h('img', { src: IMG + 'w500' + item.poster, alt: '' }) : null]),
       info
     ]));
-    root.appendChild(h('div', { class: 'hintbar', text: 'OK otevře aplikaci služby · Zpět vrátí na předchozí obrazovku' }));
+    root.appendChild(h('div', { class: 'hintbar', text: (CFG.watchmodeKey ? 'OK otevře titul rovnou ve službě' : 'OK otevře aplikaci služby (pro skok rovnou na titul doplň Watchmode klíč)') + ' · Zpět vrátí na předchozí obrazovku' }));
 
     var foundServices = [];
     var listBtn = h('div', {
@@ -863,7 +991,7 @@
       res.mine.forEach(function (s) {
         var b = h('div', {
           class: 'btn play focusable', style: gradient(s), 'data-fid': 'd-play-' + s.id,
-          text: '▶  ' + s.name, onselect: function () { launchService(s); }
+          text: '▶  ' + s.name, onselect: function () { playTitle(s, item); }
         });
         actions.insertBefore(b, listBtn);
         if (!firstPlay) firstPlay = b;
@@ -895,6 +1023,11 @@
   });
 
   // ------------------------------------------------------------------ NASTAVENÍ
+  function deepLabel(s) {
+    var st = svcSettings(s), m = st.deep || 'auto';
+    if (m === 'auto') return st.deepOk ? 'funguje (' + DEEP_LABEL[st.deepOk] + ')' : 'automaticky';
+    return DEEP_LABEL[m];
+  }
   defineScreen('settings', function (root) {
     clear(root);
     root.appendChild(topbar([]));
@@ -905,7 +1038,7 @@
     SERVICES.forEach(function (s) {
       var st = svcSettings(s);
       var d = detectedApp(s);
-      var appLabel = st.appId ? (st.appName || st.appId) : (d ? d.name + ' (automaticky)' : (IS_TV ? 'nenalezeno – vyber' : 'automaticky'));
+      var appLabel = st.appId ? (st.appName || st.appId) : (d ? d.name : (IS_TV ? 'nenalezeno – vyber' : 'automaticky'));
       var toggle = h('div', {
         class: 'btn focusable', 'data-fid': 'set-en-' + s.id, text: st.enabled ? 'Zapnuto' : 'Vypnuto',
         onselect: function () {
@@ -917,6 +1050,19 @@
         class: 'btn focusable', 'data-fid': 'set-app-' + s.id, text: 'Aplikace: ' + appLabel,
         onselect: function () { go('picker', { service: s }); }
       });
+      var deepBtn = h('div', {
+        class: 'btn focusable', 'data-fid': 'set-deep-' + s.id,
+        text: 'Skok na titul: ' + deepLabel(s),
+        onselect: function () {
+          var order = ['auto'].concat(DEEP_METHODS).concat(['off']);
+          var cur = st.deep || 'auto';
+          st.deep = order[(order.indexOf(cur) + 1) % order.length];
+          st.deepTried = [];
+          if (st.deep === 'auto') st.deepOk = null;
+          save('settings', settings);
+          deepBtn.textContent = 'Skok na titul: ' + deepLabel(s);
+        }
+      });
       var test = h('div', {
         class: 'btn focusable', 'data-fid': 'set-test-' + s.id, text: 'Vyzkoušet',
         onselect: function () { launchService(s); }
@@ -925,7 +1071,7 @@
       wrap.appendChild(h('div', { class: 'srow' }, [
         h('div', { class: 'sdot', style: 'background:' + s.colors[0] }),
         h('div', { class: 'sname', text: s.name }),
-        toggle, pick, test
+        toggle, pick, deepBtn, test
       ]));
     });
 
@@ -949,6 +1095,7 @@
       'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', katalog ', h('b', { text: countryName(REGION) }),
       '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (js/config.js)' }),
       '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (js/config.js)') }),
+      '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (js/config.js)' }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
     return first;
@@ -1114,6 +1261,7 @@
   // po návratu z Netflixu apod. obnov seznam aplikací (mohly přibýt)
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
+    if (pendingFeedback) setTimeout(askFeedback, 400);
     detectApps(function () {});
     var before = REGION + where();
     detectCountry(function () {

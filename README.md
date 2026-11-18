@@ -20,6 +20,9 @@ Disney+, Prime Video a Apple TV:
   - Promítárna jen ukazuje, co kde jde sledovat. Co ti služby opravdu pustí, určují podle
     připojení, takže tohle nastavení nic neodemkne.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
+- **Skok rovnou na titul:** tlačítko „▶ Netflix" otevře film nebo seriál přímo v aplikaci
+  služby, ne její úvodní obrazovku. U seriálu tě služba pustí tam, kde jsi skončil.
+  Potřebuje Watchmode klíč (viz níž).
 - **Detail titulu:** popis, hodnocení a tlačítka „▶ Netflix", „▶ HBO Max"… Kromě toho
   ukáže, kde je titul v jiném předplatném nebo k pronájmu.
 - **Chci vidět:** vlastní seznam napříč službami, uložený v televizi.
@@ -31,7 +34,8 @@ Disney+, Prime Video a Apple TV:
 Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 
 - **nevidí „Pokračovat ve sledování"** ani tvou historii,
-- **neotevře konkrétní film rovnou** — spustí aplikaci služby a titul si v ní dohledáš.
+- **nepřehraje video sama.** Videa služeb jsou chráněná a pustí je jen jejich vlastní
+  aplikace. Promítárna tě do nich přepne, nejlépe rovnou na vybraný titul.
 
 Údaje o tom, co kde běží, pochází z TMDB (data JustWatch) a můžou být o den či dva pozadu.
 Zemi připojení zjišťuje Promítárna přes veřejnou adresu `cloudflare.com/cdn-cgi/trace`.
@@ -64,6 +68,28 @@ Bez klíče fungují jen dlaždice pro spouštění služeb.
 Hodnocení se ukládají v televizi na 7 dní, takže limit stačí: první spuštění spotřebuje zhruba
 120 dotazů, další už jen pár na nové tituly. Kdyby limit přesto došel, filtr dočasně nic
 neschovává a aplikace na to upozorní. Seriály na Rotten Tomatoes často hodnocení nemají.
+
+## 1c. Watchmode klíč pro skok rovnou na titul (zdarma)
+
+1. Zaregistruj se na <https://api.watchmode.com/> (bezplatný plán, 1 000 dotazů měsíčně).
+2. Klíč vlož do `js/config.js`:
+
+   ```js
+   watchmodeKey: 'sem-vloz-klic',
+   ```
+
+Dotaz se posílá jen po stisku „▶" a odkaz se pamatuje 30 dní, takže limit bohatě stačí.
+
+### Jak se skok „naučí"
+
+Samsung nezveřejňuje, jak aplikacím služeb předat konkrétní titul. Promítárna proto zná tři
+způsoby. Po návratu z aplikace se zeptá: **„Otevřel se rovnou titul?"**
+
+- **Ano:** zapamatuje si, že tenhle způsob u té služby funguje, a víc se neptá.
+- **Ne:** příště zkusí další způsob. Když nefunguje žádný, u té služby bude otevírat jen
+  aplikaci.
+
+Ručně to přepneš v *Nastavení → Skok na titul* (automaticky / způsob 1–3 / vypnuto).
 
 ## 2. Instalace do televize
 
@@ -126,7 +152,7 @@ Funguje i ukazovátko (Smart Remote nebo myš).
 config.xml       manifest Tizen aplikace (oprávnění: internet, spouštění aplikací)
 index.html       vstup
 css/style.css    vzhled pro 1920×1080
-js/config.js     TMDB a OMDb klíč, region, jazyk  ← upravit
+js/config.js     TMDB, OMDb a Watchmode klíč, domov, jazyk  ← upravit
 js/services.js   seznam služeb, jejich barvy, TMDB ID a ID aplikací v TV
 js/app.js        celá logika: navigace ovladačem, obrazovky, TMDB, spouštění aplikací
 ```

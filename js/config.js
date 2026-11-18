@@ -8,6 +8,10 @@ window.PROMITARNA_CONFIG = {
   // IMDb a Rotten Tomatoes. Bez něj se ukazuje jen hodnocení TMDB a nejde filtrovat.
   omdbKey: '',
 
+  // Klíč k Watchmode (watchmode.com → API, zdarma 1000 dotazů měsíčně) pro skok rovnou
+  // na titul ve službě. Bez něj se otevře jen úvodní obrazovka služby.
+  watchmodeKey: '',
+
   // Domov – země, kde máš předplatné (jde změnit i v aplikaci v Nastavení → Země).
   region: 'CZ',
 
