@@ -10,6 +10,15 @@ Disney+, Prime Video a Apple TV:
 - **Filtr podle hodnocení:** tlačítka *IMDb* (6+ / 6,5+ / 7+ / 7,5+ / 8+) a *Rotten Tomatoes*
   (60 / 75 / 90 %+) nahoře na domovské obrazovce. Filtr se týká řádků „Populární na …"
   i hledání, ne vlastního seznamu. Tituly bez hodnocení filtr schová.
+- **Země, kde právě jsi:** tlačítko *Jsem v:* nahoře. Buď automaticky podle připojení, nebo
+  ručně. Naposledy použité země jsou v seznamu nahoře.
+  - **V EU** ti služby díky přenositelnosti předplatného (nařízení EU 2017/1128) ukazují
+    katalog z domova. Promítárna to ví a dál ukazuje domácí katalog.
+  - **Mimo EU** ukáže, co jde sledovat tam. Tituly ze seznamu „Chci vidět", které tam nejdou,
+    ztlumí, a v detailu napíše, kde běží doma.
+  - Domov (zemi předplatného) nastavíš v *Nastavení → Země*.
+  - Promítárna jen ukazuje, co kde jde sledovat. Co ti služby opravdu pustí, určují podle
+    připojení, takže tohle nastavení nic neodemkne.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Detail titulu:** popis, hodnocení a tlačítka „▶ Netflix", „▶ HBO Max"… Kromě toho
   ukáže, kde je titul v jiném předplatném nebo k pronájmu.
@@ -25,6 +34,7 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 - **neotevře konkrétní film rovnou** — spustí aplikaci služby a titul si v ní dohledáš.
 
 Údaje o tom, co kde běží, pochází z TMDB (data JustWatch) a můžou být o den či dva pozadu.
+Zemi připojení zjišťuje Promítárna přes veřejnou adresu `cloudflare.com/cdn-cgi/trace`.
 
 ---
 

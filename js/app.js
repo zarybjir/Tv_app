@@ -3,7 +3,6 @@
 'use strict';
 (function () {
   var CFG = window.PROMITARNA_CONFIG || {};
-  var REGION = CFG.region || 'CZ';
   var LANG = CFG.language || 'cs-CZ';
   var SERVICES = window.SERVICES;
   var IS_TV = typeof window.tizen !== 'undefined' && !!window.tizen.application;
@@ -23,6 +22,50 @@
   var settings = load('settings', {});   // { netflix: { enabled: true, appId: '...' , appName: '...' } }
   var watchlist = load('watchlist', []); // [{ key, id, type, title, year, poster, services: [] }]
   var installedApps = [];                // [{ id, name }] – jen na televizi
+
+  // ------------------------------------------------------------------ země: domov × kde právě jsem
+  var EU = 'AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE'.split(' ');
+  var COUNTRY_NAMES = {
+    CZ: 'Česko', SK: 'Slovensko', DE: 'Německo', AT: 'Rakousko', PL: 'Polsko', HU: 'Maďarsko', IT: 'Itálie',
+    ES: 'Španělsko', FR: 'Francie', HR: 'Chorvatsko', GR: 'Řecko', PT: 'Portugalsko', NL: 'Nizozemsko',
+    BE: 'Belgie', LU: 'Lucembursko', GB: 'Spojené království', IE: 'Irsko', CH: 'Švýcarsko', DK: 'Dánsko',
+    SE: 'Švédsko', NO: 'Norsko', FI: 'Finsko', IS: 'Island', SI: 'Slovinsko', BG: 'Bulharsko', RO: 'Rumunsko',
+    CY: 'Kypr', MT: 'Malta', EE: 'Estonsko', LV: 'Lotyšsko', LT: 'Litva', ME: 'Černá Hora', RS: 'Srbsko',
+    BA: 'Bosna a Hercegovina', AL: 'Albánie', TR: 'Turecko', EG: 'Egypt', MA: 'Maroko', TN: 'Tunisko',
+    AE: 'Spojené arabské emiráty', IL: 'Izrael', US: 'Spojené státy', CA: 'Kanada', MX: 'Mexiko',
+    BR: 'Brazílie', AR: 'Argentina', TH: 'Thajsko', VN: 'Vietnam', ID: 'Indonésie', SG: 'Singapur',
+    JP: 'Japonsko', KR: 'Jižní Korea', IN: 'Indie', AU: 'Austrálie', NZ: 'Nový Zéland', ZA: 'Jihoafrická republika'
+  };
+  function countryName(c) { return COUNTRY_NAMES[c] || c; }
+
+  var HOME = 'CZ';          // kde máš předplatné
+  var REGION = 'CZ';        // podle čeho se zjišťuje, co jde sledovat
+  var detectedCountry = null;
+
+  function where() {
+    var loc = settings._location || 'auto';
+    return loc === 'auto' ? (detectedCountry || HOME) : loc;
+  }
+  // v EU platí přenositelnost předplatného (nařízení 2017/1128): na cestách vidíš katalog z domova
+  function portable() {
+    var w = where();
+    return w !== HOME && EU.indexOf(w) >= 0 && EU.indexOf(HOME) >= 0;
+  }
+  function updateRegion() {
+    HOME = settings._home || CFG.region || 'CZ';
+    REGION = portable() ? HOME : where();
+  }
+  updateRegion();
+
+  function detectCountry(done) {
+    var finished = false;
+    function finish() { if (finished) return; finished = true; updateRegion(); if (done) done(); }
+    setTimeout(finish, 3500);
+    fetch('https://www.cloudflare.com/cdn-cgi/trace').then(function (r) { return r.text(); }).then(function (t) {
+      var m = /^loc=([A-Z]{2})\s*$/m.exec(t);
+      if (m) detectedCountry = m[1];
+    }).catch(function () {}).then(finish);
+  }
 
   function svcSettings(s) {
     if (!settings[s.id]) settings[s.id] = { enabled: true, appId: null, appName: null };
@@ -520,6 +563,26 @@
     ].concat(extra || []).concat([clock()]));
   }
 
+  // ------------------------------------------------------------------ dostupnost titulu v aktuální zemi
+  function setBadges(cardEl, services) {
+    var old = cardEl.querySelector('.badges');
+    if (old) old.parentNode.removeChild(old);
+    if (!services.length) return;
+    cardEl.insertBefore(h('div', { class: 'badges' }, services.map(function (s) {
+      return h('span', { class: 'badge', style: 'background:' + s.colors[0], text: s.short });
+    })), cardEl.querySelector('.ctitle'));
+  }
+  function markAvailability(cardEl, item) {
+    if (!CFG.tmdbKey) return;
+    providersFor(item).then(function (res) {
+      setBadges(cardEl, res.mine);
+      if (!res.mine.length) {
+        cardEl.classList.add('away');
+        cardEl.querySelector('.poster').appendChild(h('div', { class: 'awaytag', text: REGION === HOME ? 'už na tvých službách není' : 'tady nejde' }));
+      }
+    }).catch(function () {});
+  }
+
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
   function filterPill(kind) {
@@ -527,7 +590,7 @@
     function label() {
       var v = filt()[kind];
       if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
-      return 'Rotten Tomatoes: ' + (v ? v + ' %+' : 'vše');
+      return 'RT: ' + (v ? v + ' %+' : 'vše');
     }
     var el = h('div', {
       class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
@@ -556,7 +619,12 @@
     clear(root);
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
-    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), setBtn]));
+    var locBtn = h('div', {
+      class: 'pill focusable' + (where() !== HOME ? ' on' : ''), 'data-fid': 'nav-loc',
+      text: 'Jsem v: ' + countryName(where()),
+      onselect: function () { go('region', { mode: 'location' }); }
+    });
+    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), locBtn, setBtn]));
 
     var body = h('div', { class: 'vscroll', style: 'top:140px' });
     root.appendChild(body);
@@ -576,12 +644,25 @@
       if (!first) first = t;
       tiles.appendChild(t);
     });
+    if (where() !== HOME) {
+      body.appendChild(h('div', { class: 'banner' }, portable() ? [
+        'Teď jsi v: ', h('b', { text: countryName(where()) }), '. Díky pravidlům EU o přenositelnosti předplatného ti služby ukazují ',
+        h('b', { text: 'katalog z domova (' + countryName(HOME) + ')' }), ', takže rozkoukané tituly můžeš sledovat dál.'
+      ] : [
+        'Teď jsi v: ', h('b', { text: countryName(where()) }), ' (mimo EU). Služby tu ukazují místní katalog, proto i Promítárna ukazuje, co jde sledovat ',
+        h('b', { text: 'tady' }), '. Tituly ze seznamu, které tu nejdou, jsou ztlumené.'
+      ]));
+    }
     body.appendChild(row('Moje služby', 'OK spustí aplikaci', tiles));
 
     // můj seznam
     if (watchlist.length) {
       var wl = h('div', { class: 'hscroll' });
-      watchlist.forEach(function (w) { wl.appendChild(card(w, 'wl-' + w.key, w.services)); });
+      watchlist.forEach(function (w) {
+        var c = card(w, 'wl-' + w.key, w.services);
+        wl.appendChild(c);
+        markAvailability(c, w);
+      });
       body.appendChild(row('Chci vidět', watchlist.length + ' titulů', wl));
     }
 
@@ -674,13 +755,7 @@
           var c = card(it, 'sr-' + it.key);
           grid.appendChild(c);
           // dočti, kde se titul streamuje, a přidej odznaky
-          providersFor(it).then(function (res) {
-            if (!res.mine.length) return;
-            c.querySelector('.poster').parentNode.insertBefore(
-              h('div', { class: 'badges' }, res.mine.map(function (s) {
-                return h('span', { class: 'badge', style: 'background:' + s.colors[0], text: s.short });
-              })), c.querySelector('.ctitle'));
-          }).catch(function () {});
+          providersFor(it).then(function (res) { setBadges(c, res.mine); }).catch(function () {});
         });
       }).catch(function (err) {
         if (my !== seq) return;
@@ -706,9 +781,9 @@
   });
 
   // ------------------------------------------------------------------ DETAIL
-  function providersFor(item) {
+  function providersFor(item, region) {
     return tmdb('/' + item.type + '/' + item.id + '/watch/providers').then(function (j) {
-      var reg = (j.results || {})[REGION] || {};
+      var reg = (j.results || {})[region || REGION] || {};
       var list = [].concat(reg.flatrate || [], reg.free || [], reg.ads || []);
       var mine = [], others = [];
       list.forEach(function (p) {
@@ -752,7 +827,7 @@
       metaEl,
       ratingsEl,
       h('div', { class: 'overview', text: item.overview || '' }),
-      h('h3', { text: 'Kde sledovat' }),
+      h('h3', { text: REGION === HOME ? 'Kde sledovat' : 'Kde sledovat – ' + countryName(REGION) }),
       actions
     ]);
     root.appendChild(h('div', { class: 'detail-body' }, [
@@ -796,8 +871,18 @@
       if (!res.mine.length) info.appendChild(h('div', { class: 'unavailable', text: 'Na tvých službách teď není.' }));
       if (res.others.length) info.appendChild(h('div', { class: 'also', text: 'V předplatném také na: ' + res.others.join(', ') }));
       if (res.rent.length) info.appendChild(h('div', { class: 'also', text: 'K pronájmu nebo koupi: ' + res.rent.slice(0, 6).join(', ') }));
-      // aktualizuj odznaky v uloženém seznamu
-      watchlist.forEach(function (w) {
+      if (REGION !== HOME) {
+        var homeEl = h('div', { class: 'homeavail' });
+        info.appendChild(homeEl);
+        providersFor(item, HOME).then(function (hres) {
+          homeEl.textContent = hres.mine.length
+            ? 'Doma (' + countryName(HOME) + ') běží na: ' + hres.mine.map(function (s) { return s.name; }).join(', ') +
+              (res.mine.length ? '' : ' – po návratu ho dosleduješ.')
+            : 'Doma (' + countryName(HOME) + ') na tvých službách není.';
+        }).catch(function () {});
+      }
+      // aktualizuj odznaky v uloženém seznamu (jen podle domova)
+      if (REGION === HOME) watchlist.forEach(function (w) {
         if (w.key === item.key) w.services = res.mine.map(function (s) { return s.id; });
       });
       save('watchlist', watchlist);
@@ -845,6 +930,14 @@
     });
 
     wrap.appendChild(h('div', { class: 'srow' }, [
+      h('div', { class: 'sname', text: 'Země' }),
+      h('div', { class: 'btn focusable', 'data-fid': 'set-home', text: 'Domov (předplatné): ' + countryName(HOME),
+        onselect: function () { go('region', { mode: 'home' }); } }),
+      h('div', { class: 'btn focusable', 'data-fid': 'set-loc', text: 'Teď jsem v: ' + locationLabel(),
+        onselect: function () { go('region', { mode: 'location' }); } })
+    ]));
+
+    wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Chci vidět' }),
       h('div', {
         class: 'btn focusable', 'data-fid': 'set-clear-wl', text: 'Vyprázdnit seznam (' + watchlist.length + ')',
@@ -853,12 +946,102 @@
     ]));
 
     wrap.appendChild(h('div', { class: 'sinfo' }, [
-      'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', region ', h('b', { text: REGION }),
+      'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', katalog ', h('b', { text: countryName(REGION) }),
       '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (js/config.js)' }),
       '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (js/config.js)') }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
     return first;
+  });
+
+  // ------------------------------------------------------------------ VÝBĚR ZEMĚ
+  function locationLabel() {
+    var loc = settings._location || 'auto';
+    if (loc !== 'auto') return countryName(loc);
+    return 'automaticky' + (detectedCountry ? ' (' + countryName(detectedCountry) + ')' : '');
+  }
+
+  var allRegions = null; // [{ code, name }] z TMDB
+  function loadRegions() {
+    if (allRegions) return Promise.resolve(allRegions);
+    var fallback = Object.keys(COUNTRY_NAMES).map(function (c) { return { code: c, name: COUNTRY_NAMES[c] }; });
+    return tmdb('/watch/providers/regions', { language: LANG }).then(function (j) {
+      allRegions = (j.results || []).map(function (r) {
+        return { code: r.iso_3166_1, name: COUNTRY_NAMES[r.iso_3166_1] || r.native_name || r.english_name };
+      });
+      if (!allRegions.length) allRegions = fallback;
+      return allRegions;
+    }).catch(function () { return fallback; }).then(function (list) {
+      return list.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'cs'); });
+    });
+  }
+
+  defineScreen('region', function (root, params) {
+    clear(root);
+    var mode = params.mode; // 'location' | 'home'
+    root.appendChild(topbar([]));
+    var wrap = h('div', { class: 'picker' }, [h('h2', {
+      text: mode === 'home' ? 'Ve které zemi máš předplatné?' : 'Kde právě jsi?'
+    })]);
+    var sc = h('div', { class: 'vscroll' });
+    wrap.appendChild(sc);
+    root.appendChild(wrap);
+    root.appendChild(h('div', { class: 'region-help' }, mode === 'home' ? [
+      'Domov je země, kde služby platíš. Podle něj Promítárna pozná, kdy na cestách platí přenositelnost předplatného v EU.'
+    ] : [
+      'V EU ti služby i na cestách ukazují katalog z domova. Mimo EU vidíš místní katalog a Promítárna podle toho ukáže, co tu jde sledovat.',
+      h('br'), h('br'), 'Pozor na VPN: služby určují zemi podle připojení, ne podle tohoto nastavení.'
+    ]));
+
+    var current = mode === 'home' ? HOME : (settings._location || 'auto');
+    var focusEl = null;
+
+    function choose(code) {
+      if (mode === 'home') settings._home = code;
+      else {
+        settings._location = code;
+        if (code !== 'auto') {
+          var rec = (settings._recent || []).filter(function (c) { return c !== code; });
+          rec.unshift(code);
+          settings._recent = rec.slice(0, 5);
+        }
+      }
+      save('settings', settings);
+      updateRegion();
+      toast(REGION === where() || mode === 'home'
+        ? 'Katalog: ' + countryName(REGION)
+        : countryName(where()) + ' je v EU – služby ti ukážou katalog z domova (' + countryName(HOME) + ').');
+      back();
+    }
+    function item(code, label, sub, fid) {
+      var el = h('div', { class: 'pitem focusable' + (code === current ? ' cur' : ''), 'data-fid': fid,
+        onselect: function () { choose(code); } }, [label, sub ? h('small', { text: sub }) : null]);
+      if (code === current && !focusEl) focusEl = el;
+      sc.appendChild(el);
+      return el;
+    }
+
+    var first;
+    if (mode === 'location') {
+      first = item('auto', 'Automaticky podle připojení', detectedCountry ? 'teď: ' + countryName(detectedCountry) : 'nepodařilo se zjistit', 'r-auto');
+      item(HOME, 'Doma – ' + countryName(HOME), null, 'r-home');
+      (settings._recent || []).filter(function (c) { return c !== HOME; }).forEach(function (c) {
+        item(c, countryName(c), 'naposledy', 'r-rec-' + c);
+      });
+    }
+    var listStart = h('div', { class: 'psep', text: 'Všechny země' });
+    sc.appendChild(listStart);
+    var placeholder = h('div', { class: 'sinfo', text: 'Načítám seznam zemí…' });
+    sc.appendChild(placeholder);
+    loadRegions().then(function (list) {
+      sc.removeChild(placeholder);
+      list.forEach(function (r) {
+        var el = item(r.code, r.name, r.code + (EU.indexOf(r.code) >= 0 ? ' · EU' : ''), 'r-' + r.code);
+        if (mode === 'home' && r.code === current && currentScreen === screens.region) setFocus(el);
+      });
+      sc.appendChild(h('div', { style: 'height:200px' }));
+    });
+    return focusEl || first;
   });
 
   // ------------------------------------------------------------------ VÝBĚR APLIKACE
@@ -930,9 +1113,20 @@
 
   // po návratu z Netflixu apod. obnov seznam aplikací (mohly přibýt)
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) detectApps(function () {});
+    if (document.hidden) return;
+    detectApps(function () {});
+    var before = REGION + where();
+    detectCountry(function () {
+      if (REGION + where() !== before && currentScreen === screens.home) {
+        toast('Teď jsi v: ' + countryName(where()) + ' – katalog: ' + countryName(REGION));
+        show('home', {}, null);
+      }
+    });
   });
 
   // ------------------------------------------------------------------ start
-  detectApps(function () { go('home'); });
+  var pending = 2;
+  function ready() { if (--pending === 0) go('home'); }
+  detectApps(ready);
+  detectCountry(ready);
 })();

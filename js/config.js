@@ -8,7 +8,7 @@ window.PROMITARNA_CONFIG = {
   // IMDb a Rotten Tomatoes. Bez něj se ukazuje jen hodnocení TMDB a nejde filtrovat.
   omdbKey: '',
 
-  // Země, pro kterou se zjišťuje, kde se co streamuje.
+  // Domov – země, kde máš předplatné (jde změnit i v aplikaci v Nastavení → Země).
   region: 'CZ',
 
   // Jazyk názvů a popisů.
