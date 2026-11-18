@@ -5,6 +5,11 @@ Disney+, Prime Video a Apple TV:
 
 - **Moje služby:** dlaždice, které jedním stiskem OK spustí aplikaci služby.
 - **Populární na …:** u každé služby řádek s tím, co se na ní teď nejvíc sleduje (v Česku).
+- **Hodnocení IMDb a Rotten Tomatoes** u každého plakátu, v detailu navíc počet hlasů
+  a Metacritic.
+- **Filtr podle hodnocení:** tlačítka *IMDb* (6+ / 6,5+ / 7+ / 7,5+ / 8+) a *Rotten Tomatoes*
+  (60 / 75 / 90 %+) nahoře na domovské obrazovce. Filtr se týká řádků „Populární na …"
+  i hledání, ne vlastního seznamu. Tituly bez hodnocení filtr schová.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Detail titulu:** popis, hodnocení a tlačítka „▶ Netflix", „▶ HBO Max"… Kromě toho
   ukáže, kde je titul v jiném předplatném nebo k pronájmu.
@@ -35,6 +40,20 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
    ```
 
 Bez klíče fungují jen dlaždice pro spouštění služeb.
+
+## 1b. OMDb klíč pro IMDb a Rotten Tomatoes (zdarma)
+
+1. Na <https://www.omdbapi.com/apikey.aspx> vyber **FREE (1 000 dotazů denně)** a zadej e-mail.
+2. Klíč ti přijde e-mailem. Nejdřív ho aktivuj odkazem z e-mailu.
+3. Vlož ho do `js/config.js`:
+
+   ```js
+   omdbKey: 'sem-vloz-klic',
+   ```
+
+Hodnocení se ukládají v televizi na 7 dní, takže limit stačí: první spuštění spotřebuje zhruba
+120 dotazů, další už jen pár na nové tituly. Kdyby limit přesto došel, filtr dočasně nic
+neschovává a aplikace na to upozorní. Seriály na Rotten Tomatoes často hodnocení nemají.
 
 ## 2. Instalace do televize
 
@@ -97,7 +116,7 @@ Funguje i ukazovátko (Smart Remote nebo myš).
 config.xml       manifest Tizen aplikace (oprávnění: internet, spouštění aplikací)
 index.html       vstup
 css/style.css    vzhled pro 1920×1080
-js/config.js     TMDB klíč, region, jazyk  ← upravit
+js/config.js     TMDB a OMDb klíč, region, jazyk  ← upravit
 js/services.js   seznam služeb, jejich barvy, TMDB ID a ID aplikací v TV
 js/app.js        celá logika: navigace ovladačem, obrazovky, TMDB, spouštění aplikací
 ```

@@ -184,3 +184,20 @@ html, body {
 #toast.show { opacity: 1; }
 
 .hintbar { position: absolute; left: 96px; bottom: 34px; color: var(--muted); font-size: 22px; }
+
+/* ---------- hodnocení ---------- */
+.card .rbar { position: absolute; left: 8px; right: 8px; bottom: 8px; white-space: normal; }
+.rchip {
+  display: inline-block; font-size: 17px; font-weight: 800; padding: 3px 8px; border-radius: 7px;
+  margin: 4px 6px 0 0; box-shadow: 0 2px 6px rgba(0,0,0,.55);
+}
+.rchip.imdb { background: #f5c518; color: #000; }
+.rchip.rt-fresh { background: #fa320a; color: #fff; }
+.rchip.rt-rotten { background: #0ac855; color: #03250f; }
+.rchip.mc { background: #333a48; color: #fff; }
+.dratings { margin-top: 20px; min-height: 52px; }
+.dratings .rchip { font-size: 28px; padding: 8px 16px; border-radius: 12px; margin: 0 14px 0 0; }
+.dratings .votes { color: var(--muted); font-size: 23px; margin-right: 26px; }
+.pill.on { background: var(--accent); color: #000; font-weight: 700; }
+.pill.on.focus { background: var(--focus); }
+.results .msg.small { font-size: 22px; padding: 0 0 16px; }

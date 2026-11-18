@@ -4,6 +4,10 @@ window.PROMITARNA_CONFIG = {
   // i delší „API Read Access Token". Bez klíče fungují jen dlaždice služeb.
   tmdbKey: '',
 
+  // Klíč k OMDb (omdbapi.com → API Key, zdarma 1000 dotazů denně) pro hodnocení
+  // IMDb a Rotten Tomatoes. Bez něj se ukazuje jen hodnocení TMDB a nejde filtrovat.
+  omdbKey: '',
+
   // Země, pro kterou se zjišťuje, kde se co streamuje.
   region: 'CZ',
 

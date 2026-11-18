@@ -246,16 +246,165 @@
       with_watch_monetization_types: 'flatrate',
       sort_by: 'popularity.desc'
     };
-    return Promise.all([
-      tmdb('/discover/movie', Object.assign({}, p)),
-      tmdb('/discover/tv', Object.assign({}, p))
-    ]).then(function (res) {
-      var m = res[0].results || [], t = res[1].results || [], out = [];
-      for (var i = 0; i < 12; i++) {
+    var pages = [1];
+    if (filterActive()) {
+      // s filtrem stáhni víc titulů a předfiltruj podle TMDB, ať zbyde dost kvalitních
+      pages = [1, 2];
+      p['vote_count.gte'] = 50;
+      if (filt().imdb) p['vote_average.gte'] = Math.max(0, filt().imdb - 1.5);
+    }
+    var reqs = [];
+    pages.forEach(function (n) {
+      reqs.push(tmdb('/discover/movie', Object.assign({}, p, { page: n })));
+      reqs.push(tmdb('/discover/tv', Object.assign({}, p, { page: n })));
+    });
+    return Promise.all(reqs).then(function (res) {
+      var m = [], t = [], out = [];
+      res.forEach(function (r, i) { (i % 2 ? t : m).push.apply(i % 2 ? t : m, r.results || []); });
+      for (var i = 0; i < Math.max(m.length, t.length); i++) {
         if (t[i]) out.push(normalize(t[i], 'tv'));
         if (m[i]) out.push(normalize(m[i], 'movie'));
       }
       return out;
+    });
+  }
+
+  // ------------------------------------------------------------------ hodnocení IMDb / Rotten Tomatoes (OMDb)
+  var DAY = 86400000;
+  var ratingCache = load('ratings', {}); // { 'movie:123': { t, id, imdb, votes, rt, mc } }
+  var ratingPending = {};
+  var omdbBlocked = null;
+  var ratingSaveTimer = null;
+
+  function hasRatingsSource() { return !!CFG.omdbKey && !!CFG.tmdbKey; }
+
+  function saveRatingsSoon() {
+    clearTimeout(ratingSaveTimer);
+    ratingSaveTimer = setTimeout(function () {
+      var keys = Object.keys(ratingCache);
+      if (keys.length > 3000) {
+        keys.sort(function (a, b) { return ratingCache[a].t - ratingCache[b].t; });
+        keys.slice(0, keys.length - 2500).forEach(function (k) { delete ratingCache[k]; });
+      }
+      save('ratings', ratingCache);
+    }, 1500);
+  }
+
+  // max. 4 dotazy najednou, ať televize i OMDb stíhají
+  var rqueue = [], ractive = 0;
+  function enqueue(task) {
+    return new Promise(function (res, rej) { rqueue.push({ task: task, res: res, rej: rej }); pump(); });
+  }
+  function pump() {
+    while (ractive < 4 && rqueue.length) {
+      (function (job) {
+        ractive++;
+        job.task().then(job.res, job.rej).then(function () { ractive--; pump(); });
+      })(rqueue.shift());
+    }
+  }
+
+  function cachedRatings(item) {
+    var c = ratingCache[item.key];
+    if (!c) return null;
+    var ttl = (c.imdb != null || c.rt != null) ? 7 * DAY : 2 * DAY;
+    return (Date.now() - c.t < ttl) ? c : null;
+  }
+
+  function parseOmdb(j, imdbId) {
+    var num = function (v) { var n = parseFloat(String(v || '').replace(/,/g, '')); return isNaN(n) ? null : n; };
+    var rt = null, mc = null;
+    (j.Ratings || []).forEach(function (r) {
+      if (r.Source === 'Rotten Tomatoes') rt = num(r.Value);
+      if (r.Source === 'Metacritic') mc = num(r.Value);
+    });
+    return { t: Date.now(), id: imdbId, imdb: num(j.imdbRating), votes: num(j.imdbVotes), rt: rt, mc: mc };
+  }
+
+  function blockOmdb(msg) {
+    if (omdbBlocked) return;
+    omdbBlocked = /limit/i.test(msg)
+      ? 'Došel denní limit OMDb (1000 dotazů). Další hodnocení se doplní zítra.'
+      : 'OMDb klíč nefunguje (' + msg + ').';
+    toast(omdbBlocked);
+  }
+
+  function ratingsFor(item) {
+    var c = cachedRatings(item);
+    if (c) return Promise.resolve(c);
+    if (!hasRatingsSource() || omdbBlocked) return Promise.resolve(ratingCache[item.key] || null);
+    if (ratingPending[item.key]) return ratingPending[item.key];
+    var p = enqueue(function () {
+      if (omdbBlocked) return Promise.resolve(null);
+      return tmdb('/' + item.type + '/' + item.id + '/external_ids', { language: 'en-US' }).then(function (ext) {
+        if (!ext.imdb_id) return { t: Date.now(), id: null, imdb: null, votes: null, rt: null, mc: null };
+        return fetch('https://www.omdbapi.com/?i=' + encodeURIComponent(ext.imdb_id) + '&apikey=' + encodeURIComponent(CFG.omdbKey))
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j.Response === 'False') {
+              if (/limit|key|unauthori/i.test(j.Error || '')) { blockOmdb(j.Error); return null; }
+              return { t: Date.now(), id: ext.imdb_id, imdb: null, votes: null, rt: null, mc: null };
+            }
+            return parseOmdb(j, ext.imdb_id);
+          });
+      });
+    }).then(function (r) {
+      delete ratingPending[item.key];
+      if (r) { ratingCache[item.key] = r; saveRatingsSoon(); }
+      return r || ratingCache[item.key] || null;
+    }, function () {
+      delete ratingPending[item.key];
+      return ratingCache[item.key] || null;
+    });
+    ratingPending[item.key] = p;
+    return p;
+  }
+
+  // ------------------------------------------------------------------ filtr podle hodnocení
+  var IMDB_STEPS = [0, 6, 6.5, 7, 7.5, 8];
+  var RT_STEPS = [0, 60, 75, 90];
+
+  function filt() {
+    if (!settings._filter) settings._filter = { imdb: 0, rt: 0 };
+    return settings._filter;
+  }
+  function filterActive() { var f = filt(); return hasRatingsSource() && (f.imdb > 0 || f.rt > 0); }
+  function passes(r) {
+    if (omdbBlocked) return true; // bez dat nic neschovávej
+    var f = filt();
+    if (!r) return false;
+    if (f.imdb && !(r.imdb >= f.imdb)) return false;
+    if (f.rt && !(r.rt >= f.rt)) return false;
+    return true;
+  }
+  function dec(x, digits) { return (digits ? x.toFixed(digits) : String(x)).replace('.', ','); }
+  function filterLabel() {
+    var f = filt(), parts = [];
+    if (f.imdb) parts.push('IMDb ' + dec(f.imdb) + '+');
+    if (f.rt) parts.push('RT ' + f.rt + ' %+');
+    return parts.join(' a ');
+  }
+  // vrátí { items, hidden } – s aktivním filtrem počká na hodnocení všech titulů
+  function applyFilter(items) {
+    if (!filterActive()) return Promise.resolve({ items: items, hidden: 0 });
+    return Promise.all(items.map(ratingsFor)).then(function (rs) {
+      var kept = items.filter(function (it, i) { return passes(rs[i]); });
+      return { items: kept, hidden: items.length - kept.length };
+    });
+  }
+
+  function ratingChips(r) {
+    var out = [];
+    if (r && r.imdb != null) out.push(h('span', { class: 'rchip imdb', text: 'IMDb ' + dec(r.imdb, 1) }));
+    if (r && r.rt != null) out.push(h('span', { class: 'rchip ' + (r.rt >= 60 ? 'rt-fresh' : 'rt-rotten'), text: 'RT ' + r.rt + ' %' }));
+    return out;
+  }
+  function fillRatings(cardEl, item) {
+    ratingsFor(item).then(function (r) {
+      var bar = cardEl.querySelector('.rbar');
+      if (!bar) return;
+      clear(bar);
+      ratingChips(r).forEach(function (c) { bar.appendChild(c); });
     });
   }
 
@@ -328,7 +477,8 @@
     var poster = h('div', { class: 'poster' }, [
       item.poster
         ? h('img', { src: IMG + 'w342' + item.poster, alt: '' })
-        : h('div', { class: 'ph', text: item.title })
+        : h('div', { class: 'ph', text: item.title }),
+      h('div', { class: 'rbar' })
     ]);
     var badges = null;
     if (serviceIds && serviceIds.length) {
@@ -337,10 +487,12 @@
         return s ? h('span', { class: 'badge', style: 'background:' + s.colors[0], text: s.short }) : null;
       }));
     }
-    return h('div', {
+    var el = h('div', {
       class: 'card focusable', 'data-fid': fid || ('c' + (fidCounter++)),
       onselect: function () { go('detail', { item: item }); }
     }, [poster, badges, h('div', { class: 'ctitle', text: item.title + (item.year ? ' (' + item.year + ')' : '') })]);
+    fillRatings(el, item);
+    return el;
   }
 
   function row(title, sub, content) {
@@ -369,11 +521,42 @@
   }
 
   // ------------------------------------------------------------------ DOMŮ
+  var refreshTimer = null;
+  function filterPill(kind) {
+    var steps = kind === 'imdb' ? IMDB_STEPS : RT_STEPS;
+    function label() {
+      var v = filt()[kind];
+      if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
+      return 'Rotten Tomatoes: ' + (v ? v + ' %+' : 'vše');
+    }
+    var el = h('div', {
+      class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
+      onselect: function () {
+        if (!hasRatingsSource()) { toast('Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
+        var i = steps.indexOf(filt()[kind]);
+        filt()[kind] = steps[(i + 1) % steps.length];
+        save('settings', settings);
+        el.textContent = label();
+        el.classList.toggle('on', !!filt()[kind]);
+        // překresli řádky, až se přestane mačkat
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(function () {
+          if (currentScreen !== screens.home) return;
+          var fid = focused && focused.getAttribute('data-fid');
+          show('home', {}, null);
+          var again = fid && screens.home.el.querySelector('[data-fid="' + fid + '"]');
+          if (again) setFocus(again);
+        }, 900);
+      }
+    });
+    return el;
+  }
+
   defineScreen('home', function (root) {
     clear(root);
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
-    root.appendChild(topbar([searchBtn, setBtn]));
+    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), setBtn]));
 
     var body = h('div', { class: 'vscroll', style: 'top:140px' });
     root.appendChild(body);
@@ -406,10 +589,17 @@
     enabledServices().forEach(function (s) {
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
-      var rowEl = row('Populární na ' + s.name, null, r);
+      var rowEl = row('Populární na ' + s.name, filterActive() ? 'filtr ' + filterLabel() + ' · ověřuji hodnocení…' : null, r);
       body.appendChild(rowEl);
-      discoverFor(s).then(function (items) {
+      discoverFor(s).then(applyFilter).then(function (res) {
+        var items = res.items.slice(0, 24);
+        var sub = rowEl.querySelector('h2 small');
+        if (sub) sub.textContent = 'filtr ' + filterLabel() + (res.hidden ? ' · skryto ' + res.hidden : '');
         clear(r);
+        if (!items.length) {
+          rowEl.replaceChild(h('div', { class: 'note', text: 'Nic populárního nesplňuje filtr ' + filterLabel() + '.' }), r);
+          return;
+        }
         items.forEach(function (it) { r.appendChild(card(it, 'pop-' + s.id + '-' + it.key, [s.id])); });
         if (currentScreen === screens.home && currentScreen.pendingFid) {
           var el = root.querySelector('[data-fid="' + currentScreen.pendingFid + '"]');
@@ -469,13 +659,17 @@
         grid.appendChild(h('div', { class: 'msg', text: 'Piš na klávesnici vlevo. Výsledky se ukážou tady i se službou, kde titul běží.' }));
         return;
       }
-      grid.appendChild(h('div', { class: 'msg', text: 'Hledám…' }));
+      grid.appendChild(h('div', { class: 'msg', text: filterActive() ? 'Hledám a ověřuji hodnocení…' : 'Hledám…' }));
       tmdb('/search/multi', { query: query.trim(), include_adult: 'false' }).then(function (j) {
+        var all = (j.results || []).filter(function (r) { return r.media_type === 'movie' || r.media_type === 'tv'; })
+          .slice(0, 18).map(function (r) { return normalize(r); });
+        return applyFilter(all);
+      }).then(function (res) {
         if (my !== seq) return;
         clear(grid);
-        var items = (j.results || []).filter(function (r) { return r.media_type === 'movie' || r.media_type === 'tv'; })
-          .slice(0, 18).map(function (r) { return normalize(r); });
-        if (!items.length) { grid.appendChild(h('div', { class: 'msg', text: 'Nic jsem nenašel.' })); return; }
+        var items = res.items;
+        if (res.hidden) grid.appendChild(h('div', { class: 'msg small', text: 'Filtr ' + filterLabel() + ' skryl ' + res.hidden + ' výsledků (mění se na domovské obrazovce).' }));
+        if (!items.length) { grid.appendChild(h('div', { class: 'msg', text: res.hidden ? 'Nic nesplňuje filtr.' : 'Nic jsem nenašel.' })); return; }
         items.forEach(function (it) {
           var c = card(it, 'sr-' + it.key);
           grid.appendChild(c);
@@ -539,12 +733,24 @@
     var meta = [item.type === 'tv' ? 'Seriál' : 'Film'];
     if (item.year) meta.push(item.year);
     var metaEl = h('div', { class: 'meta' }, [meta.join(' · ')]);
-    if (item.vote) metaEl.appendChild(h('span', null, ['  ·  ', h('b', { text: '★ ' + item.vote.toFixed(1) })]));
+    if (item.vote && !hasRatingsSource()) metaEl.appendChild(h('span', null, ['  ·  ', h('b', { text: 'TMDB ★ ' + dec(item.vote, 1) })]));
+    var ratingsEl = h('div', { class: 'dratings' });
+    ratingsFor(item).then(function (r) {
+      if (!r) return;
+      if (r.imdb != null) {
+        ratingsEl.appendChild(h('span', { class: 'rchip imdb', text: 'IMDb ' + dec(r.imdb, 1) }));
+        if (r.votes) ratingsEl.appendChild(h('span', { class: 'votes', text: r.votes >= 1e6 ? dec(r.votes / 1e6, 1) + ' mil. hlasů' : r.votes >= 1000 ? Math.round(r.votes / 1000) + ' tis. hlasů' : r.votes + ' hlasů' }));
+      }
+      if (r.rt != null) ratingsEl.appendChild(h('span', { class: 'rchip ' + (r.rt >= 60 ? 'rt-fresh' : 'rt-rotten'), text: 'Rotten Tomatoes ' + r.rt + ' %' }));
+      if (r.mc != null) ratingsEl.appendChild(h('span', { class: 'rchip mc', text: 'Metacritic ' + r.mc }));
+      if (r.imdb == null && r.rt == null && item.vote) ratingsEl.appendChild(h('span', { class: 'votes', text: 'IMDb ani RT hodnocení nemá · TMDB ★ ' + dec(item.vote, 1) }));
+    });
 
     var actions = h('div', { class: 'actions' });
     var info = h('div', { class: 'detail-info' }, [
       h('h1', { text: item.title }),
       metaEl,
+      ratingsEl,
       h('div', { class: 'overview', text: item.overview || '' }),
       h('h3', { text: 'Kde sledovat' }),
       actions
@@ -649,6 +855,7 @@
     wrap.appendChild(h('div', { class: 'sinfo' }, [
       'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', region ', h('b', { text: REGION }),
       '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (js/config.js)' }),
+      '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (js/config.js)') }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
     return first;
