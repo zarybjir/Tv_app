@@ -9,6 +9,9 @@ Disney+, Prime Video a Apple TV:
 - **Kategorie:** domovská obrazovka je rozdělená do řádků podle žánrů (Krimi, Thrillery
   a záhady, Fantasy, Sci-fi, Akční, Komedie, Drama, Animované, Dokumenty…). Každý řádek
   obsahuje jen to, co běží na tvých službách. Štítek na plakátu ukazuje, na které službě.
+- **Celá kategorie:** na konci každého řádku je dlaždice **Zobrazit vše ›**. V telefonu
+  stačí klepnout i na název řádku. Otevře se mřížka plakátů a další tituly se při posouvání
+  načítají samy, až stovky titulů.
 - **Co chceš vidět:** v *Nastavení → Obsah domovské obrazovky* zapneš nebo vypneš:
   - **seriály a filmy**,
   - **jednotlivé kategorie** (16 žánrů),

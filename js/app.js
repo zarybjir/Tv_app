@@ -308,10 +308,11 @@
       with_watch_monetization_types: 'flatrate',
       sort_by: 'popularity.desc'
     };
-    var pages = [1];
+    var pg = opts.page || 1;
+    var pages = [pg];
     if (filterActive()) {
       // s filtrem stáhni víc titulů a předfiltruj podle TMDB, ať zbyde dost kvalitních
-      pages = [1, 2];
+      pages = [2 * pg - 1, 2 * pg];
       p['vote_count.gte'] = 50;
       if (filt().imdb) p['vote_average.gte'] = Math.max(0, filt().imdb - 1.5);
     }
@@ -1077,6 +1078,12 @@
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
       var subText = function (extra) { return [sub, filterActive() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
       var rowEl = row(title, subText(filterActive() ? ' · ověřuji hodnocení…' : ''), r);
+      var openAll = function () { go('grid', { title: title, sub: sub, opts: opts, serviceIds: serviceIds || null }); };
+      var head = rowEl.querySelector('h2');
+      head.className = MOBILE ? 'rowhead focusable' : 'rowhead';
+      head.setAttribute('data-fid', fidPrefix + 'head');
+      head._select = openAll;
+      if (MOBILE) head.appendChild(h('span', { class: 'more', text: 'Zobrazit vše ›' }));
       body.appendChild(rowEl);
       discover(opts).then(function (items) {
         return items.filter(function (it) { return !isHidden(it); });
@@ -1102,6 +1109,8 @@
             if (idx < 8) badge(); else cardEl._focus = badge;
           }
         });
+        r.appendChild(h('div', { class: 'card morecard focusable', 'data-fid': fidPrefix + 'more', onselect: openAll },
+          [h('div', { class: 'poster' }, [h('div', { class: 'ph', text: 'Zobrazit vše ›' })])]));
         restorePendingFocus();
       }).catch(function (err) {
         clear(r);
@@ -1554,6 +1563,58 @@
     ]));
     wrap.appendChild(h('div', { style: 'height:160px' }));
     return first;
+  });
+
+  // ------------------------------------------------------------------ CELÁ KATEGORIE
+  defineScreen('grid', function (root, params) {
+    clear(root);
+    root.appendChild(topbar([h('div', { class: 'eptitle', text: params.title })]));
+    var sc = h('div', { class: 'vscroll gridscreen' });
+    var grid = h('div', { class: 'grid' });
+    var status = h('div', { class: 'sinfo gridstatus', text: 'Načítám…' });
+    sc.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: params.title }),
+      params.sub ? h('small', { text: params.sub + (filterActive() ? ' · filtr ' + filterLabel() : '') }) : null]));
+    sc.appendChild(grid);
+    sc.appendChild(status);
+    root.appendChild(sc);
+
+    var page = 0, loading = false, done = false, seen = {}, count = 0, empty = 0;
+    function loadMore() {
+      if (loading || done) return;
+      loading = true;
+      page++;
+      status.textContent = 'Načítám…';
+      discover(Object.assign({}, params.opts, { page: page })).then(function (items) {
+        if (!items.length) { done = true; return { items: [], hidden: 0 }; }
+        return applyFilter(items.filter(function (it) { return !isHidden(it) && !seen[it.key]; }));
+      }).then(function (res) {
+        loading = false;
+        if (currentScreen !== screens.grid) return;
+        var first = !grid.firstChild;
+        res.items.forEach(function (it) {
+          seen[it.key] = true;
+          var c = card(it, 'g-' + it.key, params.serviceIds);
+          var idx = count++;
+          c._focus = function () { if (idx >= count - 14) loadMore(); };
+          if (!params.serviceIds) providersFor(it).then(function (pr) { setBadges(c, pr.mine); }).catch(function () {});
+          grid.appendChild(c);
+        });
+        if (first && grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
+        if (page >= 25) done = true;
+        // s přísným filtrem může stránka zůstat prázdná – zkus další, ale ne donekonečna
+        if (!res.items.length && !done) { if (++empty < 4) { loadMore(); return; } done = true; } else empty = 0;
+        status.textContent = done ? (count ? 'To je všechno (' + count + ' titulů).' : 'Nic tu není.') : '';
+        if (!done && sc.scrollHeight <= sc.clientHeight + 50) loadMore(); // obrazovka ještě není plná
+      }).catch(function (err) {
+        loading = false;
+        status.textContent = errorText(err);
+      });
+    }
+    sc.addEventListener('scroll', function () {
+      if (sc.scrollTop + sc.clientHeight > sc.scrollHeight - 800) loadMore();
+    });
+    loadMore();
+    return null;
   });
 
   // ------------------------------------------------------------------ SÉRIE A DÍLY

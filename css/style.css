@@ -268,6 +268,21 @@ html, body {
 .ep.next { box-shadow: inset 0 0 0 3px var(--accent); }
 .ep.future { opacity: .55; }
 
+/* ---------- celá kategorie ---------- */
+/* na televizi otevírá kategorii dlaždice „Zobrazit vše" na konci řádku, v mobilu i nadpis */
+.rowhead .more { font-size: 22px; color: var(--muted); font-weight: 400; margin-left: 18px; }
+.rowhead.focus { background: var(--focus); color: #000; }
+.rowhead.focus small, .rowhead.focus .more { color: #333; }
+.card.morecard .poster { background: #1f2633; }
+.card.morecard .ph { color: var(--text); font-size: 26px; font-weight: 700; }
+.gridscreen { top: 140px; padding: 0 96px; }
+.gridhead { margin: 6px 0 20px; }
+.gridhead .gtitle { font-size: 40px; font-weight: 800; }
+.gridhead small { font-size: 24px; color: var(--muted); margin-left: 16px; }
+.gridscreen .grid { padding-top: 14px; }
+.gridscreen .card { margin-bottom: 30px; }
+.gridstatus { padding-bottom: 140px; }
+
 /* =====================================================================
    MOBIL (třída .mobile na <html>) – na televizi se nic z toho nepoužije
    ===================================================================== */
@@ -399,3 +414,16 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .ep .epname { font-size: 15px; }
 .mobile .ep .epmeta, .mobile .ep.focus .epmeta { font-size: 12px; color: var(--muted); }
 .mobile .ep .epov, .mobile .ep.focus .epov { font-size: 12px; line-height: 16px; max-height: 32px; color: #c5cad4; }
+
+/* celá kategorie – mobil */
+.mobile .row h2.rowhead { padding: 0 16px 4px; }
+.mobile .rowhead .more { font-size: 13px; margin-left: 8px; color: var(--accent); }
+.mobile .rowhead.focus { background: none; color: var(--text); }
+.mobile .rowhead.focus small { color: var(--muted); }
+.mobile .rowhead.focus .more { color: var(--accent); }
+.mobile .card.morecard .ph { font-size: 15px; }
+.mobile .gridscreen { padding: 0 6px 0 16px; }
+.mobile .gridhead .gtitle { font-size: 22px; }
+.mobile .gridhead small { display: block; font-size: 13px; margin: 4px 0 0; }
+.mobile .gridscreen .card { margin-bottom: 14px; }
+.mobile .gridstatus { padding-bottom: 40px; }

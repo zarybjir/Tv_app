@@ -1,6 +1,6 @@
 {
-  "version": "1.10.0",
+  "version": "1.11.0",
   "minShell": 1,
-  "notes": "U seriálů výběr série a dílů s pamětí, kde jsi skončil. Nový řádek Nově přidáno.",
+  "notes": "Klepnutím na název řádku nebo na Zobrazit vše se kategorie rozbalí a ukáže stovky titulů.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }
