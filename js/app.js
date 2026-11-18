@@ -531,7 +531,7 @@
   }
 
   function errorText(err) {
-    if (err && err.message === 'NO_KEY') return 'Pro tipy a hledání doplň TMDB klíč do js/config.js (viz README).';
+    if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro tipy a hledání vlož v Nastavení → Klíče klíč TMDB.' : 'Pro tipy a hledání doplň TMDB klíč do js/config.js (viz README).';
     return 'Nepodařilo se načíst data (' + (err && err.message || 'chyba sítě') + ').';
   }
 
@@ -1070,7 +1070,7 @@
     var el = h('div', {
       class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
       onselect: function () {
-        if (!hasRatingsSource()) { toast('Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
+        if (!hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr vlož v Nastavení → Klíče klíč OMDb.' : 'Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
         var i = steps.indexOf(filt()[kind]);
         filt()[kind] = steps[(i + 1) % steps.length];
         save('settings', settings);
@@ -1596,6 +1596,22 @@
       ]));
     });
 
+    if (UPD) {
+      var pend = UPD.pendingVersion();
+      var updBtns = [
+        h('div', { class: 'sver', text: 'Verze ' + UPD.version + (UPD.downloaded ? ' (stažená)' : '') + ' · ' + updateLabel() }),
+        pend
+          ? h('div', { class: 'btn focusable', 'data-fid': 'set-upd-restart', text: 'Restartovat na ' + pend, onselect: function () { UPD.restart(); } })
+          : h('div', { class: 'btn focusable', 'data-fid': 'set-upd-check', text: 'Zkontrolovat',
+              onselect: function () { checkUpdates(true).then(function () { if (currentScreen === screens.settings) refreshSettings('set-upd-check'); }); } }),
+        h('div', { class: 'btn focusable', 'data-fid': 'set-upd-auto', text: 'Automaticky: ' + (UPD.auto() ? 'ano' : 'ne'),
+          onselect: function () { UPD.auto(!UPD.auto()); refreshSettings('set-upd-auto'); } })
+      ];
+      if (UPD.downloaded) updBtns.push(h('div', { class: 'btn focusable', 'data-fid': 'set-upd-reset', text: 'Vrátit verzi ' + UPD.bundled,
+        onselect: function () { UPD.reset(); } }));
+      wrap.appendChild(h('div', { class: 'srow' }, [h('div', { class: 'sname', text: 'Aktualizace' })].concat(updBtns)));
+    }
+
     wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Skryté' }),
       h('div', { class: 'btn focusable', 'data-fid': 'set-hidden', text: 'Skryté a viděné tituly (' + Object.keys(hiddenItems).length + ')…',
@@ -1613,9 +1629,9 @@
 
     wrap.appendChild(h('div', { class: 'sinfo' }, [
       'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', katalog ', h('b', { text: REGION }),
-      '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (js/config.js)' }),
-      '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (js/config.js)') }),
-      '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (js/config.js)' }),
+      '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
+      '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')') }),
+      '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : ANDROID ? '. Mobilní aplikace, nalezeno aplikací: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
     wrap.appendChild(h('div', { style: 'height:160px' }));
