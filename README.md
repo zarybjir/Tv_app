@@ -12,6 +12,20 @@ Disney+, Prime Video a Apple TV:
   - **jednotlivé kategorie** (16 žánrů),
   - řádek **Nejpopulárnější**,
   - **řádky podle služeb** („Populární na Netflix" apod.).
+- **Méně procházení:** titul, který tě nezajímá nebo jsi ho už viděl, jedním tlačítkem
+  schováš ze všech řádků. Na plakátu:
+  - **červené** tlačítko ovladače = *Nezajímá mě*,
+  - **zelené** = *Už jsem viděl*,
+  - **žluté** = vrátit poslední skrytí.
+  
+  Totéž je i v detailu titulu. Skryté tituly najdeš a vrátíš v *Nastavení → Skryté*.
+- **Nové díly a řady:** u seriálů ze seznamu „Chci vidět" a u seriálů označených jako viděné
+  ukáže štítek *Nová řada 3*, *Nové díly* nebo *Další díl 1. 12.* Až nové díly dokoukáš,
+  dej na seriálu znovu zelené tlačítko.
+- **Přibylo na tvých službách:** když se titul ze seznamu objeví na některé z tvých služeb,
+  ukáže se nahoře na domovské obrazovce. Kontroluje se při spuštění, nejvýš dvakrát denně.
+- **Pořadí řádků:** v *Nastavení → Obsah → Pořadí řádků* si posuneš oblíbené kategorie
+  nahoru.
 - **Plakáty:** skutečné plakáty filmů a seriálů z TMDB.
 - **Hodnocení IMDb a Rotten Tomatoes** u každého plakátu, v detailu navíc počet hlasů
   a Metacritic.

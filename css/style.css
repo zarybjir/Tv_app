@@ -229,3 +229,17 @@ html, body {
 .srow .btn.chip { margin: 0 14px 14px 0; opacity: .6; }
 .srow .btn.chip.on { opacity: 1; background: #2c3546; color: var(--text); box-shadow: inset 0 0 0 2px var(--accent); }
 .srow .btn.chip.focus { opacity: 1; background: var(--focus); color: #000; }
+
+/* ---------- nové díly, přibylo, pořadí ---------- */
+.newtag {
+  position: absolute; left: 8px; right: 8px; top: 46px; text-align: center; font-size: 18px; font-weight: 800;
+  background: var(--accent); color: #000; padding: 6px 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.newtag.soon { background: rgba(20,24,33,.92); color: var(--text); box-shadow: inset 0 0 0 2px var(--accent); }
+.card.clearcard .poster { background: #1f2633; }
+.card.clearcard .ph { color: var(--text); font-size: 26px; font-weight: 700; }
+.pitem.off { opacity: .55; }
+.pitem.moving { background: var(--accent) !important; color: #000; transform: translateX(24px); }
+.side-help {
+  position: absolute; left: 1180px; top: 220px; width: 640px; color: var(--muted); font-size: 25px; line-height: 38px;
+}

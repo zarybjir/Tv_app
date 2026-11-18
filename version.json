@@ -1,6 +1,6 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "minShell": 1,
-  "notes": "Volba země je zrušená, katalog je vždy podle domova.",
+  "notes": "Skrývání titulů (červené a zelené tlačítko), pořadí řádků, nové díly seriálů a upozornění na tituly, které přibyly na tvé služby.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }
