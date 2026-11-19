@@ -23,7 +23,7 @@ for (const f of ['js/boot.js', 'js/version.js', 'js/config.js']) {
 
 // klíče patří jen do televize, ne do veřejného repozitáře
 const cfg = fs.readFileSync('js/config.js', 'utf8');
-for (const k of ['tmdbKey', 'omdbKey', 'watchmodeKey']) {
+for (const k of ['tmdbKey', 'omdbKey', 'watchmodeKey', 'motnKey']) {
   const m = new RegExp(k + "\\s*:\\s*'([^']*)'").exec(cfg);
   if (m && m[1]) fail('js/config.js obsahuje vyplněný ' + k + ' – klíč do veřejného repozitáře nepatří');
 }

@@ -24,7 +24,7 @@
     try { var v = localStorage.getItem('promitarna.' + key); return v ? JSON.parse(v) : def; }
     catch (e) { return def; }
   }
-  var KEY_NAMES = ['tmdbKey', 'omdbKey', 'watchmodeKey'];
+  var KEY_NAMES = ['tmdbKey', 'omdbKey', 'watchmodeKey', 'motnKey'];
   (function () {
     var k = load('keys', {});
     KEY_NAMES.forEach(function (n) { if (k[n]) CFG[n] = k[n]; });
@@ -315,30 +315,30 @@
   // ------------------------------------------------------------------ kategorie
   // movie/tv = žánry TMDB (oddělené | znamená „nebo"), null = typ v kategorii není
   var CATEGORIES = [
-    { id: 'krimi', name: 'Krimi', movie: '80', tv: '80', on: true },
-    { id: 'thriller', name: 'Thrillery a záhady', movie: '53|9648', tv: '9648', on: true },
-    { id: 'fantasy', name: 'Fantasy', movie: '14', tv: '10765', on: true },
-    { id: 'scifi', name: 'Sci-fi', movie: '878', tv: '10765', on: true },
-    { id: 'akcni', name: 'Akční', movie: '28', tv: '10759', on: true },
-    { id: 'komedie', name: 'Komedie', movie: '35', tv: '35', on: true },
-    { id: 'drama', name: 'Drama', movie: '18', tv: '18', on: true },
-    { id: 'dobrodruzne', name: 'Dobrodružné', movie: '12', tv: '10759', on: false },
-    { id: 'horor', name: 'Horory', movie: '27', tv: null, on: false },
-    { id: 'romanticke', name: 'Romantické', movie: '10749', tv: null, on: false },
-    { id: 'animovane', name: 'Animované', movie: '16', tv: '16', on: true },
-    { id: 'rodinne', name: 'Rodinné a pro děti', movie: '10751', tv: '10751|10762', on: false },
-    { id: 'dokumenty', name: 'Dokumenty', movie: '99', tv: '99', on: true },
+    { id: 'krimi', name: 'Krimi', movie: '80', tv: '80', mg: 'crime', on: true },
+    { id: 'thriller', name: 'Thrillery a záhady', movie: '53|9648', tv: '9648', mg: 'thriller,mystery', mgRel: 'or', on: true },
+    { id: 'fantasy', name: 'Fantasy', movie: '14', tv: '10765', mg: 'fantasy', on: true },
+    { id: 'scifi', name: 'Sci-fi', movie: '878', tv: '10765', mg: 'scifi', on: true },
+    { id: 'akcni', name: 'Akční', movie: '28', tv: '10759', mg: 'action', on: true },
+    { id: 'komedie', name: 'Komedie', movie: '35', tv: '35', mg: 'comedy', on: true },
+    { id: 'drama', name: 'Drama', movie: '18', tv: '18', mg: 'drama', on: true },
+    { id: 'dobrodruzne', name: 'Dobrodružné', movie: '12', tv: '10759', mg: 'adventure', on: false },
+    { id: 'horor', name: 'Horory', movie: '27', tv: null, mg: 'horror', on: false },
+    { id: 'romanticke', name: 'Romantické', movie: '10749', tv: null, mg: 'romance', on: false },
+    { id: 'animovane', name: 'Animované', movie: '16', tv: '16', mg: 'animation', on: true },
+    { id: 'rodinne', name: 'Rodinné a pro děti', movie: '10751', tv: '10751|10762', mg: 'family', on: false },
+    { id: 'dokumenty', name: 'Dokumenty', movie: '99', tv: '99', mg: 'documentary', on: true },
     // podkategorie dokumentů: žánry spojené čárkou musí platit všechny, kw = klíčové slovo v TMDB
-    { id: 'dok-priroda', parent: 'dokumenty', short: 'Příroda a zvířata', name: 'Dokumenty: příroda a zvířata', movie: '99', tv: '99', kw: 'nature', on: true },
-    { id: 'dok-krimi', parent: 'dokumenty', short: 'Skutečné zločiny', name: 'Dokumenty: skutečné zločiny', movie: '99,80', tv: '99,80', on: true },
-    { id: 'dok-historie', parent: 'dokumenty', short: 'Historie', name: 'Dokumenty: historie', movie: '99,36', tv: '99,10768', on: true },
-    { id: 'dok-valka', parent: 'dokumenty', short: 'Válka', name: 'Dokumenty: válka', movie: '99,10752', tv: '99,10768', on: false },
-    { id: 'dok-veda', parent: 'dokumenty', short: 'Věda a vesmír', name: 'Dokumenty: věda a vesmír', movie: '99', tv: '99', kw: 'science', on: true },
-    { id: 'dok-sport', parent: 'dokumenty', short: 'Sport', name: 'Dokumenty: sport', movie: '99', tv: '99', kw: 'sports', on: false },
-    { id: 'dok-hudba', parent: 'dokumenty', short: 'Hudba', name: 'Dokumenty: hudba', movie: '99,10402', tv: null, on: false },
-    { id: 'historicke', name: 'Válečné a historické', movie: '10752|36', tv: '10768', on: false },
-    { id: 'reality', name: 'Reality show', movie: null, tv: '10764', on: false },
-    { id: 'westerny', name: 'Westerny', movie: '37', tv: '37', on: false }
+    { id: 'dok-priroda', parent: 'dokumenty', short: 'Příroda a zvířata', name: 'Dokumenty: příroda a zvířata', movie: '99', tv: '99', kw: 'nature', mg: 'documentary', on: true },
+    { id: 'dok-krimi', parent: 'dokumenty', short: 'Skutečné zločiny', name: 'Dokumenty: skutečné zločiny', movie: '99,80', tv: '99,80', mg: 'documentary,crime', mgRel: 'and', on: true },
+    { id: 'dok-historie', parent: 'dokumenty', short: 'Historie', name: 'Dokumenty: historie', movie: '99,36', tv: '99,10768', mg: 'documentary,history', mgRel: 'and', on: true },
+    { id: 'dok-valka', parent: 'dokumenty', short: 'Válka', name: 'Dokumenty: válka', movie: '99,10752', tv: '99,10768', mg: 'documentary,war', mgRel: 'and', on: false },
+    { id: 'dok-veda', parent: 'dokumenty', short: 'Věda a vesmír', name: 'Dokumenty: věda a vesmír', movie: '99', tv: '99', kw: 'science', mg: 'documentary', on: true },
+    { id: 'dok-sport', parent: 'dokumenty', short: 'Sport', name: 'Dokumenty: sport', movie: '99', tv: '99', kw: 'sports', mg: 'documentary', on: false },
+    { id: 'dok-hudba', parent: 'dokumenty', short: 'Hudba', name: 'Dokumenty: hudba', movie: '99,10402', tv: null, mg: 'documentary,music', mgRel: 'and', on: false },
+    { id: 'historicke', name: 'Válečné a historické', movie: '10752|36', tv: '10768', mg: 'war,history', mgRel: 'or', on: false },
+    { id: 'reality', name: 'Reality show', movie: null, tv: '10764', mg: 'reality', on: false },
+    { id: 'westerny', name: 'Westerny', movie: '37', tv: '37', mg: 'western', on: false }
   ];
 
   function content() {
@@ -399,6 +399,7 @@
   }
 
   function discover(opts) {
+    if (filt().cz === 'dub' && CFG.motnKey) return motnDiscover(opts);
     if (opts.kw && !opts.kwId) {
       return keywordId(opts.kw).then(function (id) { return discover(Object.assign({}, opts, { kwId: id || -1 })); });
     }
@@ -439,6 +440,126 @@
         if (m[i]) out.push(normalize(m[i], 'movie'));
       }
       return out;
+    });
+  }
+
+  // ------------------------------------------------------------------ český dabing (Movie of the Night / Streaming Availability)
+  // Bezplatný plán má 1000 dotazů měsíčně: řádky se pamatují 3 dny, údaje o titulu 30 dní.
+  var MOTN = 'https://api.movieofthenight.com/v4';
+  var MOTN_LIMIT = 950;
+  var dubCache = load('dub', {});        // { 'movie:123': { t, by: { netflix: { a: 1, s: 1 } } } }
+  var motnRows = load('motnrows', {});   // { url: { t, keys: [...], next } }
+  var motnUsage = load('motnUsage', { m: '', n: 0 });
+  var motnCursors = {};
+  var dubSaveTimer = null;
+
+  function motnCount() {
+    var m = new Date().toISOString().slice(0, 7);
+    if (motnUsage.m !== m) motnUsage = { m: m, n: 0 };
+    return motnUsage;
+  }
+  function motn(path, params) {
+    if (!CFG.motnKey) return Promise.reject(new Error('NO_MOTN'));
+    var u = motnCount();
+    if (u.n >= MOTN_LIMIT) return Promise.reject(new Error('MOTN_LIMIT'));
+    u.n++;
+    save('motnUsage', u);
+    var qs = Object.keys(params || {}).filter(function (k) { return params[k] != null && params[k] !== ''; })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    return fetch(MOTN + path + (qs ? '?' + qs : ''), { headers: { 'X-API-Key': CFG.motnKey } }).then(function (r) {
+      if (r.status === 429) { u.n = MOTN_LIMIT; save('motnUsage', u); throw new Error('MOTN_LIMIT'); }
+      if (!r.ok) throw new Error('Movie of the Night HTTP ' + r.status);
+      return r.json();
+    });
+  }
+  function saveDubSoon() {
+    clearTimeout(dubSaveTimer);
+    dubSaveTimer = setTimeout(function () {
+      var keys = Object.keys(dubCache);
+      if (keys.length > 4000) {
+        keys.sort(function (a, b) { return dubCache[a].t - dubCache[b].t; });
+        keys.slice(0, keys.length - 3000).forEach(function (k) { delete dubCache[k]; });
+      }
+      save('dub', dubCache);
+    }, 1500);
+  }
+  function keyOfTmdb(t) { var p = String(t || '').split('/'); return p.length === 2 ? (p[0] === 'tv' ? 'tv' : 'movie') + ':' + p[1] : null; }
+  function storeDub(show) {
+    var key = keyOfTmdb(show.tmdbId);
+    if (!key) return null;
+    var by = {};
+    ((show.streamingOptions || {})[REGION.toLowerCase()] || []).forEach(function (o) {
+      if (['subscription', 'free'].indexOf(o.type) < 0 || !o.service) return;
+      var e = by[o.service.id] || (by[o.service.id] = { a: 0, s: 0 });
+      if ((o.audios || []).some(function (x) { return x.language === 'ces'; })) e.a = 1;
+      if ((o.subtitles || []).some(function (x) { return x.locale && x.locale.language === 'ces'; })) e.s = 1;
+    });
+    dubCache[key] = { t: Date.now(), by: by };
+    saveDubSoon();
+    return key;
+  }
+  function hasCzDub(key) {
+    var d = dubCache[key];
+    if (!d) return null;
+    return enabledServices().some(function (sv) { return d.by[sv.id] && d.by[sv.id].a; });
+  }
+  function dubFor(item) {
+    var d = dubCache[item.key];
+    if (d && Date.now() - d.t < 30 * DAY) return Promise.resolve(d);
+    return motn('/shows/' + item.type + '/' + item.id, { country: REGION.toLowerCase() }).then(function (show) {
+      storeDub(show);
+      return dubCache[item.key] || null;
+    });
+  }
+
+  // řádek v režimu „Český dabing": seznam z Movie of the Night, české názvy a plakáty z TMDB
+  function motnDiscover(opts) {
+    var c = content();
+    var services = (opts.services || enabledServices().map(function (sv) { return sv.id; }));
+    var params = {
+      country: REGION.toLowerCase(),
+      catalogs: services.join(','),
+      order_by: opts.mOrder || 'popularity_1month',
+      order_direction: opts.mOrder === 'release_date' ? 'desc' : null,
+      genres: opts.mg || null,
+      genres_relation: opts.mgRel || null,
+      show_type: c.series && !c.movies ? 'series' : (c.movies && !c.series ? 'movie' : null)
+    };
+    if (opts.movie === null && opts.tv) params.show_type = 'series';
+    if (opts.tv === null && opts.movie) params.show_type = 'movie';
+    var base = JSON.stringify(params);
+    var pg = opts.page || 1;
+    var cursor = null;
+    if (pg > 1) {
+      cursor = (motnCursors[base] || {})[pg];
+      if (!cursor) return Promise.resolve([]);
+    }
+    var cacheKey = base + '#' + pg;
+    var cached = motnRows[cacheKey];
+    var get = (cached && Date.now() - cached.t < 3 * DAY) ? Promise.resolve(cached) :
+      motn('/shows/search/filters', Object.assign({}, params, { cursor: cursor })).then(function (j) {
+        var keys = (j.shows || []).map(storeDub).filter(Boolean);
+        var entry = { t: Date.now(), keys: keys, next: j.hasMore ? j.nextCursor : null };
+        if (pg === 1) {
+          motnRows[cacheKey] = entry;
+          var rk = Object.keys(motnRows);
+          if (rk.length > 120) { rk.sort(function (a, b) { return motnRows[a].t - motnRows[b].t; }); rk.slice(0, rk.length - 100).forEach(function (k) { delete motnRows[k]; }); }
+          save('motnrows', motnRows);
+        }
+        return entry;
+      });
+    return get.then(function (entry) {
+      (motnCursors[base] = motnCursors[base] || {})[pg + 1] = entry.next;
+      var keys = entry.keys.filter(function (k) { return hasCzDub(k); });
+      // pokud jsou všechny na stránce bez dabingu, vrať aspoň prázdnou stránku s odkazem na další
+      return Promise.all(keys.map(function (k) {
+        var t = k.split(':');
+        return tmdb('/' + t[0] + '/' + t[1]).then(function (d) { return normalize(d, t[0]); }, function () { return null; });
+      })).then(function (items) {
+        items = items.filter(Boolean);
+        if (!items.length && entry.next) items.more = true;
+        return items;
+      });
     });
   }
 
@@ -543,7 +664,7 @@
   }
   function filterActive() { var f = filt(); return hasRatingsSource() && (f.imdb > 0 || f.rt > 0); }
   // jakýkoli filtr včetně jazyka (česká tvorba)
-  function anyFilter() { return filterActive() || !!filt().cz; }
+  function anyFilter() { return filterActive() || filt().cz === 'cs' || (filt().cz === 'dub' && !!CFG.motnKey); }
   function passes(r) {
     if (omdbBlocked) return true; // bez dat nic neschovávej
     var f = filt();
@@ -558,6 +679,7 @@
     if (f.imdb) parts.push('IMDb ' + dec(f.imdb) + '+');
     if (f.rt) parts.push('RT ' + f.rt + ' %+');
     if (f.cz === 'cs') parts.push('česká tvorba');
+    if (f.cz === 'dub') parts.push('český dabing');
     return parts.join(' a ');
   }
   // vrátí { items, hidden } – s aktivním filtrem počká na hodnocení všech titulů
@@ -587,6 +709,8 @@
   }
 
   function errorText(err) {
+    if (err && err.message === 'MOTN_LIMIT') return 'Došel měsíční limit dotazů na český dabing (Movie of the Night). Vypni filtr Český dabing, od 1. dne v měsíci zase pojede.';
+    if (err && err.message === 'NO_MOTN') return 'Pro filtr Český dabing chybí klíč Movie of the Night.';
     if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro tipy a hledání vlož v Nastavení → Klíče klíč TMDB.' : 'Pro tipy a hledání doplň TMDB klíč do js/config.js (viz README).';
     return 'Nepodařilo se načíst data (' + (err && err.message || 'chyba sítě') + ').';
   }
@@ -824,6 +948,7 @@
       onselect: function () { go('detail', { item: item }); }
     }, [poster, badges, h('div', { class: 'ctitle', text: item.title + (item.year ? ' (' + item.year + ')' : '') })]);
     el._item = item;
+    if (hasCzDub(item.key)) poster.appendChild(h('div', { class: 'dubtag', text: 'CZ' }));
     fillRatings(el, item);
     if (hiddenItems[item.key]) markHidden(el);
     return el;
@@ -1117,10 +1242,10 @@
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
   function filterPill(kind) {
-    var steps = kind === 'imdb' ? IMDB_STEPS : kind === 'cz' ? ['', 'cs'] : RT_STEPS;
+    var steps = kind === 'imdb' ? IMDB_STEPS : kind === 'cz' ? (CFG.motnKey ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
     function label() {
       var v = filt()[kind];
-      if (kind === 'cz') return v === 'cs' ? 'Česká tvorba' : 'Jazyk: vše';
+      if (kind === 'cz') return v === 'cs' ? 'Česká tvorba' : v === 'dub' ? 'Český dabing' : 'Jazyk: vše';
       if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
       return 'RT: ' + (v ? v + ' %+' : 'vše');
     }
@@ -1259,14 +1384,15 @@
         addRow('Nově přidáno', 'nové filmy a seriály s novými díly na tvých službách', 'new-', {
           providers: providers, movie: '', tv: '',
           extraMovie: { 'primary_release_date.gte': day(120), 'primary_release_date.lte': day(0), 'vote_count.gte': 5 },
-          extraTv: { 'air_date.gte': day(30), 'air_date.lte': day(0) }
+          extraTv: { 'air_date.gte': day(30), 'air_date.lte': day(0) },
+          mOrder: 'release_date'
         });
         return;
       }
-      if (id === 'trending') { addRow('Nejpopulárnější na tvých službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '' }); return; }
+      if (id === 'trending') { addRow('Nejpopulárnější na tvých službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '', mOrder: 'popularity_1month' }); return; }
       if (id === 'byService') {
         enabledServices().forEach(function (s) {
-          addRow('Populární na ' + s.name, typesLabel(), 'pop-' + s.id + '-', { providers: s.providers, movie: '', tv: '' }, [s.id]);
+          addRow('Populární na ' + s.name, typesLabel(), 'pop-' + s.id + '-', { providers: s.providers, movie: '', tv: '', services: [s.id] }, [s.id]);
         });
         return;
       }
@@ -1277,10 +1403,10 @@
         var tabs = null;
         if (fam) {
           tabs = CATEGORIES.filter(function (x) { return x.id === fam || x.parent === fam; }).map(function (x) {
-            return { id: x.id, name: x.parent ? x.short : 'Vše', opts: { providers: providers, movie: x.movie, tv: x.tv, kw: x.kw } };
+            return { id: x.id, name: x.parent ? x.short : 'Vše', opts: { providers: providers, movie: x.movie, tv: x.tv, kw: x.kw, mg: x.mg, mgRel: x.mgRel } };
           });
         }
-        addRow(cat.name, typesLabel(cat), 'cat-' + cat.id + '-', { providers: providers, movie: cat.movie, tv: cat.tv, kw: cat.kw }, null,
+        addRow(cat.name, typesLabel(cat), 'cat-' + cat.id + '-', { providers: providers, movie: cat.movie, tv: cat.tv, kw: cat.kw, mg: cat.mg, mgRel: cat.mgRel }, null,
           tabs ? { list: tabs, cur: cat.id } : null);
       }
     });
@@ -1498,6 +1624,19 @@
         if (!firstPlay) firstPlay = b;
       });
       if (!res.mine.length) info.appendChild(h('div', { class: 'unavailable', text: 'Na tvých službách teď není.' }));
+      if (CFG.motnKey && res.mine.length) {
+        var dubEl = h('div', { class: 'also dubline', text: 'Zjišťuji český dabing…' });
+        info.appendChild(dubEl);
+        dubFor(item).then(function (d) {
+          if (!d) { dubEl.textContent = 'Český dabing: nezjištěno.'; return; }
+          var parts = res.mine.map(function (sv) {
+            var e = d.by[sv.id];
+            if (!e) return sv.name + ' ?';
+            return sv.name + (e.a ? ' ✓' : e.s ? ' – jen české titulky' : ' – bez češtiny');
+          });
+          dubEl.textContent = 'Český dabing: ' + parts.join(' · ');
+        }).catch(function (err) { dubEl.textContent = errorText(err); });
+      }
       if (res.others.length) info.appendChild(h('div', { class: 'also', text: 'V předplatném také na: ' + res.others.join(', ') }));
       if (res.rent.length) info.appendChild(h('div', { class: 'also', text: 'K pronájmu nebo koupi: ' + res.rent.slice(0, 6).join(', ') }));
       // aktualizuj odznaky v uloženém seznamu
@@ -1574,7 +1713,7 @@
     if (MOBILE) {
       wrap.appendChild(h('div', { class: 'shead', text: 'Klíče' }));
       var inputs = {};
-      var labels = { tmdbKey: 'TMDB (nutný)', omdbKey: 'OMDb – hodnocení', watchmodeKey: 'Watchmode – skok na titul' };
+      var labels = { tmdbKey: 'TMDB (nutný)', omdbKey: 'OMDb – hodnocení', watchmodeKey: 'Watchmode – skok na titul', motnKey: 'Movie of the Night – český dabing' };
       var keyBox = h('div', { class: 'srow wrap keys' }, KEY_NAMES.map(function (n) {
         var inp = h('input', { class: 'minput', type: 'text', placeholder: labels[n], autocomplete: 'off', spellcheck: 'false' });
         inp.value = CFG[n] || '';
@@ -1703,6 +1842,7 @@
       'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', katalog ', h('b', { text: REGION }),
       '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
       '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')') }),
+      '. Český dabing (Movie of the Night): ', h('b', { text: CFG.motnKey ? 'zapnuto, tento měsíc ' + motnCount().n + ' z 1000 dotazů' : 'chybí klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
       '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
       IS_TV ? '. Nalezeno aplikací v TV: ' + installedApps.length + '.' : ANDROID ? '. Mobilní aplikace, nalezeno aplikací: ' + installedApps.length + '.' : '. Běží mimo televizi (náhled v prohlížeči).'
     ]));
@@ -1752,7 +1892,7 @@
       var myGen = gen;
       discover(Object.assign({}, curOpts, { page: page })).then(function (items) {
         if (myGen !== gen) return { items: [], hidden: 0, stale: true };
-        if (!items.length) { done = true; return { items: [], hidden: 0 }; }
+        if (!items.length && !items.more) { done = true; return { items: [], hidden: 0 }; }
         return applyFilter(items.filter(function (it) { return !isHidden(it) && !seen[it.key]; }));
       }).then(function (res) {
         if (res.stale) return;

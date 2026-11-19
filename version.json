@@ -1,6 +1,6 @@
 {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "minShell": 1,
-  "notes": "Nový filtr Česká tvorba (tlačítko Jazyk nahoře).",
+  "notes": "Filtr Český dabing (potřebuje klíč Movie of the Night) a informace o dabingu v detailu titulu.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

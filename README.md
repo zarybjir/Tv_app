@@ -49,6 +49,11 @@ Disney+, Prime Video, Apple TV a SkyShowtime:
   i hledání, ne vlastního seznamu. Tituly bez hodnocení filtr schová.
 - **Česká tvorba:** tlačítko *Jazyk* nahoře přepne všechny řádky, rozbalené kategorie
   i hledání jen na české filmy a seriály.
+- **Český dabing:** další stisk tlačítka *Jazyk* naplní řádky a rozbalené kategorie jen
+  tituly, které mají na některé z tvých služeb český zvuk. Štítek **CZ** na plakátu označuje
+  ověřený dabing. Detail titulu ukáže dabing a titulky u každé služby zvlášť, např.
+  „Netflix ✓ · Disney+ – jen české titulky". Potřebuje klíč Movie of the Night (viz níž).
+  Hledání dabing neověřuje, aby se šetřil limit.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Skok rovnou na titul:** tlačítko „▶ Netflix" otevře film nebo seriál přímo v aplikaci
   služby, ne její úvodní obrazovku. U seriálu tě služba pustí tam, kde jsi skončil.
@@ -120,6 +125,16 @@ způsoby. Po návratu z aplikace se zeptá: **„Otevřel se rovnou titul?"**
   aplikaci.
 
 Ručně to přepneš v *Nastavení → Skok na titul* (automaticky / způsob 1–3 / vypnuto).
+
+## 1d. Klíč Movie of the Night pro český dabing (zdarma)
+
+1. Zaregistruj se na <https://developers.movieofthenight.com/> a nech si plán **Free**
+   (1 000 dotazů měsíčně).
+2. Zkopíruj API klíč do `js/config.js` (`motnKey: '…'`), v mobilu do *Nastavení → Klíče*.
+
+Kvůli limitu se řádky s dabingem pamatují 3 dny a údaje o titulu 30 dní. Spotřebu vidíš
+v nastavení. U 950 dotazů za měsíc se Videotéka sama zastaví a od 1. dne dalšího měsíce
+zase pojede.
 
 ## 2. Instalace do televize
 

@@ -12,6 +12,10 @@ window.PROMITARNA_CONFIG = {
   // na titul ve službě. Bez něj se otevře jen úvodní obrazovka služby.
   watchmodeKey: '',
 
+  // Klíč k Movie of the Night (developers.movieofthenight.com, zdarma 1000 dotazů měsíčně)
+  // pro filtr Český dabing. Bez něj filtr nabízí jen Českou tvorbu.
+  motnKey: '',
+
   // Země, kde máš předplatné – podle ní se zjišťuje, co kde běží.
   region: 'CZ',
 
