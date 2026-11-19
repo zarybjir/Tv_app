@@ -115,7 +115,7 @@ html, body {
 .detail-info .meta { margin-top: 16px; color: var(--muted); font-size: 28px; }
 .detail-info .meta b { color: var(--accent); }
 .detail-info .overview { margin-top: 28px; font-size: 27px; line-height: 40px; color: #d5dae4;
-  max-height: 200px; overflow: hidden; }
+  max-height: 160px; overflow: hidden; }
 .detail-info h3 { margin-top: 40px; font-size: 26px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 2px; }
 .actions { margin-top: 18px; }
 .btn {
@@ -290,6 +290,36 @@ html, body {
   padding: 3px 8px; border-radius: 7px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 .dubline { color: var(--text); }
 
+/* ---------- odchází / přidáno ---------- */
+.leavetag, .addtag {
+  position: absolute; left: 8px; right: 8px; bottom: 44px; text-align: center; font-size: 17px; font-weight: 800;
+  padding: 5px 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.leavetag { background: #ff5a4f; color: #fff; }
+.addtag { background: rgba(20,24,33,.92); color: var(--text); }
+
+/* ---------- herci v detailu ---------- */
+.people { margin-top: 18px; }
+.prow { margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
+.plabel { display: inline-block; width: 110px; color: var(--muted); font-size: 22px; vertical-align: middle; }
+.btn.person { font-size: 21px; font-weight: 600; padding: 8px 16px; margin: 0 10px 8px 0; border-radius: 10px; background: rgba(27,32,43,.85); }
+.btn.person.focus { background: var(--focus); color: #000; }
+
+/* ---------- herec ---------- */
+.personhead { display: flex; margin: 6px 0 26px; }
+.pphoto { width: 160px; height: 240px; border-radius: 14px; overflow: hidden; background: var(--panel); flex: none; }
+.pphoto img { width: 100%; height: 100%; display: block; }
+.ptext { margin-left: 30px; max-width: 1200px; }
+.ptext .gtitle { font-size: 44px; font-weight: 800; }
+.pmeta { color: var(--muted); font-size: 24px; margin-top: 6px; }
+.pbio { font-size: 22px; line-height: 32px; color: #c5cad4; margin-top: 12px; max-height: 128px; overflow: hidden; }
+
+/* ---------- kalendář a párování ---------- */
+.calbody { top: 140px; }
+.calbody .gridhead { padding: 0 96px; }
+.calstatus { padding: 0 96px; }
+.paircode { font-size: 40px; font-weight: 900; letter-spacing: 4px; color: var(--accent); margin-right: 26px; font-family: monospace; }
+
 /* =====================================================================
    MOBIL (třída .mobile na <html>) – na televizi se nic z toho nepoužije
    ===================================================================== */
@@ -440,3 +470,19 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .gridtabs .pill { margin: 0 8px 4px 0; }
 
 .mobile .dubtag { font-size: 10px; padding: 2px 5px; right: 5px; top: 5px; border-radius: 5px; }
+
+/* novinky – mobil */
+.mobile .leavetag, .mobile .addtag { font-size: 10px; bottom: 26px; left: 4px; right: 4px; padding: 3px 2px; border-radius: 5px; }
+.mobile .people { margin-top: 12px; }
+.mobile .prow { white-space: normal; overflow: visible; }
+.mobile .plabel { display: block; width: auto; font-size: 12px; margin-bottom: 4px; }
+.mobile .btn.person { font-size: 13px; padding: 6px 10px; margin: 0 6px 6px 0; border-radius: 8px; }
+.mobile .btn.person.focus { background: rgba(27,32,43,.85); color: var(--text); }
+.mobile .personhead { margin: 0 0 14px; }
+.mobile .pphoto { width: 90px; height: 135px; border-radius: 10px; }
+.mobile .ptext { margin-left: 14px; }
+.mobile .ptext .gtitle { font-size: 22px; }
+.mobile .pmeta { font-size: 12px; }
+.mobile .pbio { font-size: 12px; line-height: 17px; max-height: 85px; }
+.mobile .calbody .gridhead, .mobile .calstatus { padding: 0 16px; }
+.mobile .paircode { font-size: 22px; }

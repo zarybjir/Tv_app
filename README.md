@@ -54,6 +54,18 @@ Disney+, Prime Video, Apple TV a SkyShowtime:
   ověřený dabing. Detail titulu ukáže dabing a titulky u každé služby zvlášť, např.
   „Netflix ✓ · Disney+ – jen české titulky". Potřebuje klíč Movie of the Night (viz níž).
   Hledání dabing neověřuje, aby se šetřil limit.
+- **Herci a tvůrci:** detail titulu ukazuje režii (u seriálů tvůrce) a hlavní herce. Klepnutím
+  na jméno se otevře stránka s tím, co s daným člověkem běží na tvých službách.
+- **Kalendář:** tlačítko *Kalendář* nahoře ukáže po dnech, co na tvých službách přibude,
+  a další díly seriálů, které sleduješ.
+- **Skutečně nově přidané a Brzy odchází** (s klíčem Movie of the Night): řádek *Nově přidáno*
+  ukazuje, co službám opravdu přibylo do katalogu, a řádek *Brzy odchází* to, co mizí,
+  s datem. Tituly ze seznamu *Chci vidět*, které odcházejí, mají štítek „odchází 20. 11."
+  a upozornění nahoře na hlavní stránce.
+- **Pošli do TV:** v televizi zapni *Nastavení → Telefon jako ovladač* a kód zadej v mobilu
+  v *Nastavení → Televize*. V detailu titulu v mobilu pak tlačítko *Pošli do TV* otevře titul
+  v televizi. Zpráva jde přes veřejnou službu ntfy.sh na náhodný kanál a obsahuje jen název
+  a ID titulu.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Skok rovnou na titul:** tlačítko „▶ Netflix" otevře film nebo seriál přímo v aplikaci
   služby, ne její úvodní obrazovku. U seriálu tě služba pustí tam, kde jsi skončil.

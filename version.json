@@ -1,6 +1,6 @@
 {
-  "version": "1.15.0",
+  "version": "1.16.0",
   "minShell": 1,
-  "notes": "Filtr Český dabing (potřebuje klíč Movie of the Night) a informace o dabingu v detailu titulu.",
+  "notes": "Herci a režie v detailu, Kalendář, řádky Nově přidáno a Brzy odchází podle skutečného katalogu, Pošli do TV z mobilu.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

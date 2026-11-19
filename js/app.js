@@ -399,6 +399,7 @@
   }
 
   function discover(opts) {
+    if (opts.changes) return changesDiscover(opts);
     if (filt().cz === 'dub' && CFG.motnKey) return motnDiscover(opts);
     if (opts.kw && !opts.kwId) {
       return keywordId(opts.kw).then(function (id) { return discover(Object.assign({}, opts, { kwId: id || -1 })); });
@@ -491,6 +492,7 @@
     ((show.streamingOptions || {})[REGION.toLowerCase()] || []).forEach(function (o) {
       if (['subscription', 'free'].indexOf(o.type) < 0 || !o.service) return;
       var e = by[o.service.id] || (by[o.service.id] = { a: 0, s: 0 });
+      if (o.expiresOn) e.x = e.x ? Math.min(e.x, o.expiresOn) : o.expiresOn;
       if ((o.audios || []).some(function (x) { return x.language === 'ces'; })) e.a = 1;
       if ((o.subtitles || []).some(function (x) { return x.locale && x.locale.language === 'ces'; })) e.s = 1;
     });
@@ -503,6 +505,97 @@
     if (!d) return null;
     return enabledServices().some(function (sv) { return d.by[sv.id] && d.by[sv.id].a; });
   }
+  // datum (unix s), kdy titul odchází z tvých služeb – jen pokud odchází ze všech, kde běží
+  function leavingTs(key) {
+    var d = dubCache[key];
+    if (!d) return null;
+    var mine = enabledServices().filter(function (sv) { return d.by[sv.id]; });
+    if (!mine.length || mine.some(function (sv) { return !d.by[sv.id].x; })) return null;
+    var ts = Math.max.apply(null, mine.map(function (sv) { return d.by[sv.id].x; }));
+    var now = Date.now() / 1000;
+    return ts > now && ts - now < 45 * 86400 ? ts : null;
+  }
+  // když dorazí nová data o odchodech, doplň štítky a upozornění na hlavní stránce
+  function updateLeavingUI() {
+    var root = screens.home && screens.home.el;
+    if (!root || !root.firstChild) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.card[data-key]'), function (c) {
+      var lv = leavingTs(c.getAttribute('data-key'));
+      if (lv && !c.querySelector('.leavetag')) {
+        var at = c.querySelector('.addtag');
+        if (at) at.parentNode.removeChild(at);
+        c.querySelector('.poster').appendChild(h('div', { class: 'leavetag', text: 'odchází ' + fmtTs(lv) }));
+      }
+    });
+    var leavingWl = watchlist.filter(function (w) { return leavingTs(w.key); });
+    var banner = root.querySelector('.leavebanner');
+    if (!leavingWl.length) { if (banner) banner.parentNode.removeChild(banner); return; }
+    var nb = leavingBanner(leavingWl);
+    if (banner) banner.parentNode.replaceChild(nb, banner);
+    else {
+      var first = root.querySelector('.vscroll .row');
+      if (first) first.parentNode.insertBefore(nb, first);
+    }
+  }
+  function leavingBanner(list) {
+    return h('div', { class: 'banner leavebanner' }, ['Z tvého seznamu brzy odchází: ',
+      h('b', { text: list.map(function (w) { return w.title + ' (' + fmtTs(leavingTs(w.key)) + ')'; }).join(', ') })]);
+  }
+  function titulu(n) { return n + (n === 1 ? ' titul' : n >= 2 && n <= 4 ? ' tituly' : ' titulů'); }
+  function fmtTs(ts) { var d = new Date(ts * 1000); return d.getDate() + '. ' + (d.getMonth() + 1) + '.'; }
+
+  // ----- změny katalogu: nové, odchází, přibude (Movie of the Night /changes)
+  var motnChanges = load('motnch', {});
+  function changesPage(type, pg) {
+    var cats = enabledServices().map(function (sv) { return sv.id + '.subscription'; }).join(',');
+    var params = { country: REGION.toLowerCase(), change_type: type, item_type: 'show', catalogs: cats, order_direction: type === 'new' ? 'desc' : 'asc' };
+    var base = type + '|' + cats;
+    if (pg > 1) {
+      var cur = (motnCursors[base] || {})[pg];
+      if (!cur) return Promise.resolve({ entries: [], next: null });
+      params.cursor = cur;
+    }
+    var cached = pg === 1 && motnChanges[base];
+    var get = cached && Date.now() - cached.t < 12 * 3600 * 1000 ? Promise.resolve(cached) :
+      motn('/changes', params).then(function (j) {
+        var seen = {}, entries = [];
+        (j.changes || []).forEach(function (c) {
+          var sh = (j.shows || {})[c.showId];
+          if (!sh) return;
+          var key = storeDub(sh);
+          if (!key || seen[key]) return;
+          seen[key] = 1;
+          entries.push({ key: key, ts: c.timestamp || 0, svc: c.service && c.service.id });
+        });
+        setTimeout(updateLeavingUI, 0);
+        var e = { t: Date.now(), entries: entries, next: j.hasMore ? j.nextCursor : null };
+        if (pg === 1) { motnChanges[base] = e; save('motnch', motnChanges); }
+        return e;
+      });
+    return get.then(function (e) { (motnCursors[base] = motnCursors[base] || {})[pg + 1] = e.next; return e; });
+  }
+  function entriesToItems(entries) {
+    var c = content();
+    return Promise.all(entries.map(function (en) {
+      var t = en.key.split(':');
+      if ((t[0] === 'tv' && !c.series) || (t[0] === 'movie' && !c.movies)) return null;
+      if (filt().cz === 'dub' && !hasCzDub(en.key)) return null;
+      return tmdb('/' + t[0] + '/' + t[1]).then(function (d) {
+        var it = normalize(d, t[0]);
+        it.change = en;
+        return it;
+      }, function () { return null; });
+    })).then(function (list) { return list.filter(Boolean); });
+  }
+  function changesDiscover(opts) {
+    return changesPage(opts.changes, opts.page || 1).then(function (e) {
+      return entriesToItems(e.entries).then(function (items) {
+        if (!items.length && e.next) items.more = true;
+        return items;
+      });
+    });
+  }
+
   function dubFor(item) {
     var d = dubCache[item.key];
     if (d && Date.now() - d.t < 30 * DAY) return Promise.resolve(d);
@@ -949,6 +1042,9 @@
     }, [poster, badges, h('div', { class: 'ctitle', text: item.title + (item.year ? ' (' + item.year + ')' : '') })]);
     el._item = item;
     if (hasCzDub(item.key)) poster.appendChild(h('div', { class: 'dubtag', text: 'CZ' }));
+    var lv = leavingTs(item.key);
+    if (lv) poster.appendChild(h('div', { class: 'leavetag', text: 'odchází ' + fmtTs(lv) }));
+    else if (item.change && item.change.ts && fid && fid.indexOf('new-') === 0) poster.appendChild(h('div', { class: 'addtag', text: 'přidáno ' + fmtTs(item.change.ts) }));
     fillRatings(el, item);
     if (hiddenItems[item.key]) markHidden(el);
     return el;
@@ -1161,10 +1257,19 @@
   // ------------------------------------------------------------------ přibylo na tvých službách
   var arrivals = load('arrivals', []); // [{ key, services: [id] }]
 
+  function refreshWatchlistMotn() {
+    if (!CFG.motnKey) return;
+    var stale = watchlist.filter(function (w) { var d = dubCache[w.key]; return !d || Date.now() - d.t > 7 * DAY; }).slice(0, 6);
+    stale.forEach(function (w) {
+      motn('/shows/' + w.type + '/' + w.id, { country: REGION.toLowerCase() }).then(function (sh) { storeDub(sh); updateLeavingUI(); }).catch(function () {});
+    });
+  }
+
   function checkArrivals() {
     if (!CFG.tmdbKey || !watchlist.length) return;
     if (Date.now() - load('arrivalsCheck', 0) < 12 * 3600 * 1000) return;
     save('arrivalsCheck', Date.now());
+    refreshWatchlistMotn();
     Promise.all(watchlist.map(function (w) {
       return providersFor(w).then(function (res) {
         return { w: w, mine: res.mine.map(function (s) { return s.id; }) };
@@ -1218,7 +1323,7 @@
 
   // ------------------------------------------------------------------ pořadí řádků
   function rowDefs() {
-    return [{ id: 'news', name: 'Nové díly a řady' }, { id: 'watchlist', name: 'Chci vidět' }, { id: 'newest', name: 'Nově přidáno' }, { id: 'trending', name: 'Nejpopulárnější' }]
+    return [{ id: 'news', name: 'Nové díly a řady' }, { id: 'watchlist', name: 'Chci vidět' }, { id: 'newest', name: 'Nově přidáno' }, { id: 'leaving', name: 'Brzy odchází' }, { id: 'trending', name: 'Nejpopulárnější' }]
       .concat(CATEGORIES.map(function (cat) { return { id: 'cat:' + cat.id, name: cat.name }; }))
       .concat([{ id: 'byService', name: 'Podle služeb' }]);
   }
@@ -1235,6 +1340,7 @@
     if (id === 'news' || id === 'watchlist') return true;
     if (id === 'trending') return c.trending;
     if (id === 'newest') return c.newest;
+    if (id === 'leaving') return c.leaving !== false;
     if (id === 'byService') return c.byService;
     return !!c.cats[id.slice(4)];
   }
@@ -1277,7 +1383,8 @@
     homeDirty = false;
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
-    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), filterPill('cz'), setBtn]));
+    var calBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-cal', text: 'Kalendář', onselect: function () { go('calendar'); } });
+    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), filterPill('cz'), calBtn, setBtn]));
 
     var body = h('div', { class: 'vscroll', style: 'top:140px' });
     root.appendChild(body);
@@ -1297,6 +1404,8 @@
       if (!first) first = t;
       tiles.appendChild(t);
     });
+    var leavingWl = watchlist.filter(function (w) { return leavingTs(w.key); });
+    if (leavingWl.length) body.appendChild(leavingBanner(leavingWl));
     body.appendChild(row('Moje služby', MOBILE ? 'klepnutím spustíš aplikaci' : 'OK spustí aplikaci · na plakátu: červené = nezajímá mě, zelené = viděl jsem', tiles));
     if (!CFG.tmdbKey && MOBILE) {
       body.appendChild(h('div', { class: 'banner focusable', 'data-fid': 'need-keys', onselect: function () { go('settings'); } },
@@ -1379,6 +1488,14 @@
         return;
       }
       if (!canDiscover || !isRowOn(id)) return;
+      if (id === 'leaving') {
+        if (CFG.motnKey) addRow('Brzy odchází', 'z katalogu tvých služeb, nejbližší první', 'leave-', { providers: providers, changes: 'expiring' });
+        return;
+      }
+      if (id === 'newest' && CFG.motnKey) {
+        addRow('Nově přidáno', 'tituly, které tvým službám přibyly do katalogu', 'new-', { providers: providers, changes: 'new' });
+        return;
+      }
       if (id === 'newest') {
         var day = function (n) { return new Date(Date.now() - n * DAY).toISOString().slice(0, 10); };
         addRow('Nově přidáno', 'nové filmy a seriály s novými díly na tvých službách', 'new-', {
@@ -1552,11 +1669,31 @@
     });
 
     var actions = h('div', { class: 'actions' });
+    var peopleEl = h('div', { class: 'people' });
+    if (CFG.tmdbKey) {
+      Promise.all([
+        tmdb('/' + item.type + '/' + item.id + (item.type === 'tv' ? '/aggregate_credits' : '/credits')),
+        item.type === 'tv' ? tvInfo(item) : Promise.resolve(null)
+      ]).then(function (r) {
+        var cr = r[0] || {}, tv = r[1];
+        var dirs = item.type === 'tv'
+          ? ((tv && tv.created_by) || []).slice(0, 2)
+          : (cr.crew || []).filter(function (p) { return p.job === 'Director'; }).slice(0, 2);
+        var cast = (cr.cast || []).slice(0, MOBILE ? 8 : 6);
+        var pchip = function (p) {
+          return h('div', { class: 'btn person focusable', 'data-fid': 'p-' + p.id, text: p.name,
+            onselect: function () { go('person', { id: p.id, name: p.name }); } });
+        };
+        if (dirs.length) peopleEl.appendChild(h('div', { class: 'prow' }, [h('span', { class: 'plabel', text: item.type === 'tv' ? 'Tvůrci' : 'Režie' })].concat(dirs.map(pchip))));
+        if (cast.length) peopleEl.appendChild(h('div', { class: 'prow' }, [h('span', { class: 'plabel', text: 'Hrají' })].concat(cast.map(pchip))));
+      }).catch(function () {});
+    }
     var info = h('div', { class: 'detail-info' }, [
       h('h1', { text: item.title }),
       metaEl,
       ratingsEl,
       h('div', { class: 'overview', text: item.overview || '' }),
+      peopleEl,
       h('h3', { text: 'Kde sledovat' }),
       actions
     ]);
@@ -1577,6 +1714,9 @@
     });
     var loading = h('div', { class: 'also', text: 'Zjišťuji dostupnost…' });
     var epBtn = null;
+    if (MOBILE && load('tvCode', '')) {
+      actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: '📺 Pošli do TV', onselect: function () { sendToTv(item); } }));
+    }
     if (item.type === 'tv' && CFG.tmdbKey) {
       var pr = progress[item.key];
       epBtn = h('div', { class: 'btn secondary focusable', 'data-fid': 'd-episodes',
@@ -1753,6 +1893,7 @@
     wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Řádky' }),
       chip('set-c-new', 'Nově přidáno', c.newest, function () { return (c.newest = !c.newest); }),
+      CFG.motnKey ? chip('set-c-leave', 'Brzy odchází', c.leaving !== false, function () { return (c.leaving = c.leaving === false); }) : null,
       chip('set-c-trend', 'Nejpopulárnější', c.trending, function () { return (c.trending = !c.trending); }),
       chip('set-c-svc', 'Podle služeb', c.byService, function () { return (c.byService = !c.byService); }),
       h('div', { class: 'btn focusable', 'data-fid': 'set-order', text: 'Pořadí řádků…', onselect: function () { go('order'); } })
@@ -1821,6 +1962,33 @@
       if (UPD.downloaded) updBtns.push(h('div', { class: 'btn focusable', 'data-fid': 'set-upd-reset', text: 'Vrátit verzi ' + UPD.bundled,
         onselect: function () { UPD.reset(); } }));
       wrap.appendChild(h('div', { class: 'srow' }, [h('div', { class: 'sname', text: 'Aktualizace' })].concat(updBtns)));
+    }
+
+    if (MOBILE) {
+      var tvCode = load('tvCode', '');
+      var codeIn = h('input', { class: 'minput', type: 'text', placeholder: 'Kód z televize, např. K7QM-9XTR-2B', autocomplete: 'off' });
+      codeIn.value = tvCode ? fmtCode(tvCode) : '';
+      wrap.appendChild(h('div', { class: 'srow wrap keys' }, [
+        h('div', { class: 'sname', text: 'Televize' }),
+        h('label', { class: 'keyrow' }, [h('span', { text: tvCode ? 'Spárováno – v detailu titulu je tlačítko Pošli do TV.' : 'Kód najdeš v televizi v Nastavení → Telefon jako ovladač.' }), codeIn]),
+        h('div', { class: 'btn focusable', 'data-fid': 'set-pair', text: 'Spárovat', onselect: function () {
+          var c = normCode(codeIn.value);
+          if (c.length !== 10) { toast('Kód má 10 znaků, opiš ho z televize.'); return; }
+          save('tvCode', c); toast('Spárováno s televizí'); refreshSettings('set-pair');
+        } }),
+        tvCode ? h('div', { class: 'btn focusable', 'data-fid': 'set-unpair', text: 'Zrušit', onselect: function () { save('tvCode', ''); refreshSettings('set-pair'); } }) : null
+      ]));
+    } else {
+      var pc = load('pairCode', '');
+      wrap.appendChild(h('div', { class: 'srow' }, [
+        h('div', { class: 'sname', text: 'Telefon jako ovladač' }),
+        pc ? h('div', { class: 'paircode', text: fmtCode(pc) }) : null,
+        h('div', { class: 'btn focusable', 'data-fid': 'set-paircode', text: pc ? 'Nový kód' : 'Zapnout',
+          onselect: function () { stopTvListener(); save('pairCode', newPairCode()); startTvListener(); refreshSettings('set-paircode'); } }),
+        pc ? h('div', { class: 'btn focusable', 'data-fid': 'set-pairoff', text: 'Vypnout',
+          onselect: function () { stopTvListener(); save('pairCode', ''); refreshSettings('set-paircode'); } }) : null,
+        h('div', { class: 'sver', text: pc ? 'V mobilní Videotéce zadej tenhle kód v Nastavení → Televize.' : 'Pak půjde v mobilu poslat titul do televize.' })
+      ]));
     }
 
     wrap.appendChild(h('div', { class: 'srow' }, [
@@ -1922,6 +2090,172 @@
       if (sc.scrollTop + sc.clientHeight > sc.scrollHeight - 800) loadMore();
     });
     loadMore();
+    return null;
+  });
+
+  // ------------------------------------------------------------------ TELEFON JAKO OVLADAČ (ntfy.sh)
+  // Televize poslouchá na náhodném kanálu, telefon na něj pošle titul. Posílá se jen ID a název titulu.
+  var NTFY = 'https://ntfy.sh/videoteka-';
+  var CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function newPairCode() {
+    var a = new Uint8Array(10), out = '';
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    for (var i = 0; i < a.length; i++) out += CODE_ABC[a[i] % CODE_ABC.length];
+    return out;
+  }
+  function fmtCode(c) { return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8); }
+  function normCode(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+
+  function sendToTv(item) {
+    var code = load('tvCode', '');
+    if (!code) { toast('Nejdřív spáruj televizi v Nastavení.'); return; }
+    var msg = { v: 1, a: 'open', item: { key: item.key, id: item.id, type: item.type, title: item.title, year: item.year,
+      poster: item.poster, backdrop: item.backdrop, overview: item.overview, vote: item.vote } };
+    fetch(NTFY + code, { method: 'POST', body: JSON.stringify(msg) }).then(function (r) {
+      toast(r.ok ? 'Odesláno do televize: ' + item.title : 'Odeslání se nepovedlo (HTTP ' + r.status + ').');
+    }).catch(function () { toast('Odeslání se nepovedlo – zkontroluj internet.'); });
+  }
+
+  var tvListener = null;
+  function startTvListener() {
+    var code = load('pairCode', '');
+    if (!code || MOBILE || tvListener || typeof EventSource === 'undefined') return;
+    tvListener = new EventSource(NTFY + code + '/sse');
+    tvListener.onmessage = function (ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        var m = JSON.parse(d.message || '{}');
+        if (m.a === 'open' && m.item && m.item.id) {
+          var it = m.item;
+          it.key = (it.type === 'tv' ? 'tv' : 'movie') + ':' + it.id;
+          toast('Z telefonu: ' + it.title);
+          go('detail', { item: it });
+        }
+      } catch (e) { /* cizí zpráva */ }
+    };
+  }
+  function stopTvListener() { if (tvListener) { tvListener.close(); tvListener = null; } }
+
+  // ------------------------------------------------------------------ KALENDÁŘ
+  defineScreen('calendar', function (root) {
+    clear(root);
+    root.appendChild(topbar([h('div', { class: 'eptitle', text: 'Kalendář' })]));
+    var body = h('div', { class: 'vscroll calbody' });
+    root.appendChild(body);
+    var status = h('div', { class: 'sinfo calstatus', text: 'Načítám…' });
+    body.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: 'Co přibude' }),
+      h('small', { text: CFG.motnKey ? 'nové tituly na tvých službách a další díly seriálů, které sleduješ' : 'další díly seriálů, které sleduješ (pro nové tituly služeb vlož klíč Movie of the Night)' })]));
+    body.appendChild(status);
+
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var DAYS = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
+    function dayLabel(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      var diff = Math.round((d - today) / DAY);
+      if (diff === 0) return 'Dnes';
+      if (diff === 1) return 'Zítra';
+      return DAYS[d.getDay()] + ' ' + d.getDate() + '. ' + (d.getMonth() + 1) + '.';
+    }
+    function ymd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+
+    var events = []; // { date, item, tag, services }
+    var jobs = [];
+    // další díly sledovaných seriálů
+    trackedSeries().forEach(function (t) {
+      jobs.push(tvInfo(t.item).then(function (d) {
+        var ne = d.next_episode_to_air;
+        if (!ne || !ne.air_date) return;
+        var diff = (new Date(ne.air_date + 'T00:00:00') - today) / DAY;
+        if (diff < 0 || diff > 60) return;
+        events.push({ date: ne.air_date, item: t.item, tag: (ne.episode_number === 1 ? 'nová řada ' : 'díl ') + ne.season_number + '×' + ne.episode_number });
+      }).catch(function () {}));
+    });
+    // co přibude do katalogu služeb (2 stránky = až 50 změn)
+    if (CFG.motnKey) {
+      jobs.push(changesPage('upcoming', 1).then(function (e1) {
+        return (e1.next ? changesPage('upcoming', 2) : Promise.resolve({ entries: [] })).then(function (e2) {
+          var all = e1.entries.concat(e2.entries).filter(function (en) { return en.ts; });
+          return entriesToItems(all).then(function (items) {
+            items.forEach(function (it) {
+              var sv = serviceById(it.change.svc);
+              events.push({ date: ymd(new Date(it.change.ts * 1000)), item: it, tag: 'přibude', services: sv ? [sv] : [] });
+            });
+          });
+        });
+      }).catch(function (err) { status.textContent = errorText(err); }));
+    }
+    Promise.all(jobs).then(function () {
+      if (currentScreen !== screens.calendar) return;
+      var uniq = {};
+      events = events.filter(function (ev) { var k = ev.date + '|' + ev.item.key; if (uniq[k]) return false; uniq[k] = 1; return true; });
+      events.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      var groups = {}, order = [];
+      events.forEach(function (ev) { if (!groups[ev.date]) { groups[ev.date] = []; order.push(ev.date); } groups[ev.date].push(ev); });
+      if (status.textContent === 'Načítám…') status.textContent = order.length ? '' : 'V nejbližších týdnech tu nic není.';
+      var firstCard = null;
+      order.forEach(function (date) {
+        var r = h('div', { class: 'hscroll' });
+        groups[date].forEach(function (ev) {
+          var c = card(ev.item, 'cal-' + date + '-' + ev.item.key, null);
+          c.querySelector('.poster').appendChild(h('div', { class: 'newtag' + (ev.tag === 'přibude' ? ' soon' : ''), text: ev.tag }));
+          if (ev.services) setBadges(c, ev.services);
+          r.appendChild(c);
+          if (!firstCard) firstCard = c;
+        });
+        body.appendChild(row(dayLabel(date), titulu(groups[date].length), r));
+      });
+      body.appendChild(h('div', { style: 'height:120px' }));
+      if (firstCard && (!focused || !document.body.contains(focused))) setFocus(firstCard);
+    });
+    return null;
+  });
+
+  // ------------------------------------------------------------------ HEREC / TVŮRCE
+  defineScreen('person', function (root, params) {
+    clear(root);
+    root.appendChild(topbar([h('div', { class: 'eptitle', text: params.name })]));
+    var sc = h('div', { class: 'vscroll gridscreen' });
+    var head = h('div', { class: 'personhead' });
+    var grid = h('div', { class: 'grid' });
+    var status = h('div', { class: 'sinfo gridstatus', text: 'Hledám, co s ním běží na tvých službách…' });
+    sc.appendChild(head); sc.appendChild(grid); sc.appendChild(status);
+    root.appendChild(sc);
+    tmdb('/person/' + params.id, { append_to_response: 'combined_credits' }).then(function (p) {
+      var photo = h('div', { class: 'pphoto' }, [p.profile_path ? h('img', { src: IMG + 'w185' + p.profile_path, alt: '' }) : null]);
+      var bits = [];
+      if (p.birthday) bits.push('nar. ' + p.birthday.split('-').reverse().map(function (x) { return String(+x); }).join('. '));
+      if (p.place_of_birth) bits.push(p.place_of_birth);
+      head.appendChild(photo);
+      head.appendChild(h('div', { class: 'ptext' }, [h('div', { class: 'gtitle', text: p.name }), h('div', { class: 'pmeta', text: bits.join(' · ') }),
+        h('div', { class: 'pbio', text: p.biography || '' })]));
+      var seen = {}, list = [];
+      [].concat((p.combined_credits || {}).cast || [], (p.combined_credits || {}).crew || []).forEach(function (r) {
+        if (r.media_type !== 'movie' && r.media_type !== 'tv') return;
+        var it = normalize(r);
+        if (seen[it.key]) return;
+        seen[it.key] = 1;
+        it.pop = r.popularity || 0;
+        list.push(it);
+      });
+      list.sort(function (a, b) { return b.pop - a.pop; });
+      list = list.slice(0, 60);
+      var found = 0, done = 0;
+      return Promise.all(list.map(function (it) {
+        return enqueue(function () { return providersFor(it); }).then(function (res) {
+          done++;
+          if (res.mine.length && !isHidden(it)) {
+            found++;
+            var c = card(it, 'pc-' + it.key);
+            setBadges(c, res.mine);
+            grid.appendChild(c);
+            if (found === 1 && currentScreen === screens.person && (!focused || !document.body.contains(focused))) setFocus(c);
+          }
+          status.textContent = 'Prohledáno ' + done + ' z ' + list.length + ' titulů…';
+        }, function () { done++; });
+      })).then(function () {
+        status.textContent = found ? 'Na tvých službách: ' + titulu(found) + '.' : 'Teď s ním na tvých službách nic neběží.';
+      });
+    }).catch(function (err) { status.textContent = errorText(err); });
     return null;
   });
 
@@ -2223,6 +2557,7 @@
     }
     go('home');
     setTimeout(checkArrivals, 2500);
+    startTvListener();
     if (UPD) {
       UPD.ready();
       if (UPD.notice) toast(UPD.notice);
