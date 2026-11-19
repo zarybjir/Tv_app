@@ -1,6 +1,6 @@
 {
-  "version": "1.12.1",
+  "version": "1.13.0",
   "minShell": 1,
-  "notes": "V Nastavení je zpět řádek Aktualizace (Zkontrolovat).",
+  "notes": "Přibyl SkyShowtime a podkategorie dokumentů (příroda, skutečné zločiny, historie, věda…).",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

@@ -3,7 +3,7 @@
 Pro **televize Samsung** a **telefony s Androidem** (viz [Mobilní aplikace](#mobilní-aplikace-android)).
 
 Aplikace pro televize **Samsung (Tizen, modely od roku 2018)**. Spojuje Netflix, HBO Max,
-Disney+, Prime Video a Apple TV:
+Disney+, Prime Video, Apple TV a SkyShowtime:
 
 - **Moje služby:** dlaždice, které jedním stiskem OK spustí aplikaci služby.
 - **Kategorie:** domovská obrazovka je rozdělená do řádků podle žánrů (Krimi, Thrillery
@@ -12,6 +12,9 @@ Disney+, Prime Video a Apple TV:
 - **Celá kategorie:** na konci každého řádku je dlaždice **Zobrazit vše ›**. V telefonu
   stačí klepnout i na název řádku. Otevře se mřížka plakátů a další tituly se při posouvání
   načítají samy, až stovky titulů.
+- **Dokumenty po podkategoriích:** příroda a zvířata, skutečné zločiny, historie, válka,
+  věda a vesmír, sport a hudba. Zapínají se v *Nastavení → Obsah → Dokumenty* a v rozbalené
+  kategorii Dokumenty mezi nimi přepínáš záložkami.
 - **Co chceš vidět:** v *Nastavení → Obsah domovské obrazovky* zapneš nebo vypneš:
   - **seriály a filmy**,
   - **jednotlivé kategorie** (16 žánrů),

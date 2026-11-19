@@ -47,5 +47,16 @@ window.SERVICES = [
     providers: [350],
     match: /apple\s*tv/i,
     appIds: ['3201807016597']
+  },
+  {
+    id: 'skyshowtime', name: 'SkyShowtime', short: 'SST',
+    watchmode: /skyshowtime/i,
+    android: ['com.skyshowtime.skyshowtime.google', 'com.skyshowtime.skyshowtime'],
+    colors: ['#4b2fd6', '#120a3d'],
+    // ID v TMDB se při spuštění ověří podle jména (providerMatch)
+    providers: [1773],
+    providerMatch: /skyshowtime/i,
+    match: /skyshowtime/i,
+    appIds: []
   }
 ];

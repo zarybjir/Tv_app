@@ -327,6 +327,14 @@
     { id: 'animovane', name: 'Animované', movie: '16', tv: '16', on: true },
     { id: 'rodinne', name: 'Rodinné a pro děti', movie: '10751', tv: '10751|10762', on: false },
     { id: 'dokumenty', name: 'Dokumenty', movie: '99', tv: '99', on: true },
+    // podkategorie dokumentů: žánry spojené čárkou musí platit všechny, kw = klíčové slovo v TMDB
+    { id: 'dok-priroda', parent: 'dokumenty', short: 'Příroda a zvířata', name: 'Dokumenty: příroda a zvířata', movie: '99', tv: '99', kw: 'nature', on: true },
+    { id: 'dok-krimi', parent: 'dokumenty', short: 'Skutečné zločiny', name: 'Dokumenty: skutečné zločiny', movie: '99,80', tv: '99,80', on: true },
+    { id: 'dok-historie', parent: 'dokumenty', short: 'Historie', name: 'Dokumenty: historie', movie: '99,36', tv: '99,10768', on: true },
+    { id: 'dok-valka', parent: 'dokumenty', short: 'Válka', name: 'Dokumenty: válka', movie: '99,10752', tv: '99,10768', on: false },
+    { id: 'dok-veda', parent: 'dokumenty', short: 'Věda a vesmír', name: 'Dokumenty: věda a vesmír', movie: '99', tv: '99', kw: 'science', on: true },
+    { id: 'dok-sport', parent: 'dokumenty', short: 'Sport', name: 'Dokumenty: sport', movie: '99', tv: '99', kw: 'sports', on: false },
+    { id: 'dok-hudba', parent: 'dokumenty', short: 'Hudba', name: 'Dokumenty: hudba', movie: '99,10402', tv: null, on: false },
     { id: 'historicke', name: 'Válečné a historické', movie: '10752|36', tv: '10768', on: false },
     { id: 'reality', name: 'Reality show', movie: null, tv: '10764', on: false },
     { id: 'westerny', name: 'Westerny', movie: '37', tv: '37', on: false }
@@ -352,7 +360,47 @@
   }
 
   // opts: { providers: [...], movie: 'žánry'|''|null, tv: 'žánry'|''|null }
+  // ID poskytovatelů v TMDB podle jména – služby s `providerMatch` si je doplní samy
+  function resolveProviders(done) {
+    var need = SERVICES.some(function (sv) { return sv.providerMatch; });
+    if (!need || !CFG.tmdbKey) { done(); return; }
+    function apply(list) {
+      SERVICES.forEach(function (sv) {
+        if (!sv.providerMatch) return;
+        list.forEach(function (pv) {
+          if (sv.providerMatch.test(pv.n) && sv.providers.indexOf(pv.id) < 0) sv.providers.push(pv.id);
+        });
+      });
+    }
+    var cached = load('provcache', null);
+    if (cached && cached.region === REGION && Date.now() - cached.t < 7 * DAY) { apply(cached.list); done(); return; }
+    var finished = false;
+    var fin = function () { if (!finished) { finished = true; done(); } };
+    setTimeout(fin, 3500);
+    Promise.all([tmdb('/watch/providers/movie', { watch_region: REGION }), tmdb('/watch/providers/tv', { watch_region: REGION })]).then(function (r) {
+      var list = [];
+      r.forEach(function (x) { (x.results || []).forEach(function (pv) { list.push({ id: pv.provider_id, n: pv.provider_name }); }); });
+      save('provcache', { t: Date.now(), region: REGION, list: list });
+      apply(list);
+    }).catch(function () {}).then(fin);
+  }
+
+  // klíčové slovo TMDB (např. „nature") → jeho číslo, pamatuje se v zařízení
+  var kwCache = load('kwcache', {});
+  function keywordId(kw) {
+    if (kwCache[kw]) return Promise.resolve(kwCache[kw]);
+    return tmdb('/search/keyword', { query: kw }).then(function (j) {
+      var list = j.results || [];
+      var hit = list.filter(function (r) { return (r.name || '').toLowerCase() === kw; })[0] || list[0];
+      if (hit) { kwCache[kw] = hit.id; save('kwcache', kwCache); return hit.id; }
+      return null;
+    }).catch(function () { return null; });
+  }
+
   function discover(opts) {
+    if (opts.kw && !opts.kwId) {
+      return keywordId(opts.kw).then(function (id) { return discover(Object.assign({}, opts, { kwId: id || -1 })); });
+    }
     var c = content();
     var p = {
       watch_region: REGION,
@@ -375,6 +423,7 @@
       var mp = Object.assign({}, p, { page: n }), tp = Object.assign({}, p, { page: n });
       if (opts.movie) mp.with_genres = opts.movie;
       if (opts.tv) tp.with_genres = opts.tv;
+      if (opts.kwId > 0) { mp.with_keywords = opts.kwId; tp.with_keywords = opts.kwId; }
       if (opts.extraMovie) Object.assign(mp, opts.extraMovie);
       if (opts.extraTv) Object.assign(tp, opts.extraTv);
       reqs.push(wantMovie ? tmdb('/discover/movie', mp) : Promise.resolve({ results: [] }));
@@ -1127,12 +1176,12 @@
     renderArrivals(arrivalsSlot);
 
     var c = content();
-    function addRow(title, sub, fidPrefix, opts, serviceIds) {
+    function addRow(title, sub, fidPrefix, opts, serviceIds, tabs) {
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
       var subText = function (extra) { return [sub, filterActive() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
       var rowEl = row(title, subText(filterActive() ? ' · ověřuji hodnocení…' : ''), r);
-      var openAll = function () { go('grid', { title: title, sub: sub, opts: opts, serviceIds: serviceIds || null }); };
+      var openAll = function () { go('grid', { title: title, sub: sub, opts: opts, serviceIds: serviceIds || null, tabs: tabs || null }); };
       var head = rowEl.querySelector('h2');
       head.className = MOBILE ? 'rowhead focusable' : 'rowhead';
       head.setAttribute('data-fid', fidPrefix + 'head');
@@ -1214,7 +1263,18 @@
         return;
       }
       var cat = CATEGORIES.filter(function (x) { return 'cat:' + x.id === id; })[0];
-      if (cat && typesLabel(cat)) addRow(cat.name, typesLabel(cat), 'cat-' + cat.id + '-', { providers: providers, movie: cat.movie, tv: cat.tv });
+      if (cat && typesLabel(cat)) {
+        // dokumenty a jejich podkategorie mají v rozbalené mřížce záložky
+        var fam = cat.parent || (CATEGORIES.some(function (x) { return x.parent === cat.id; }) ? cat.id : null);
+        var tabs = null;
+        if (fam) {
+          tabs = CATEGORIES.filter(function (x) { return x.id === fam || x.parent === fam; }).map(function (x) {
+            return { id: x.id, name: x.parent ? x.short : 'Vše', opts: { providers: providers, movie: x.movie, tv: x.tv, kw: x.kw } };
+          });
+        }
+        addRow(cat.name, typesLabel(cat), 'cat-' + cat.id + '-', { providers: providers, movie: cat.movie, tv: cat.tv, kw: cat.kw }, null,
+          tabs ? { list: tabs, cur: cat.id } : null);
+      }
     });
 
     body.appendChild(h('div', { style: 'height:120px' }));
@@ -1551,10 +1611,14 @@
       h('div', { class: 'btn focusable', 'data-fid': 'set-order', text: 'Pořadí řádků…', onselect: function () { go('order'); } })
     ]));
     first = wrap.querySelector('.chip');
-    var catChips = CATEGORIES.map(function (cat) {
+    var catChips = CATEGORIES.filter(function (cat) { return !cat.parent; }).map(function (cat) {
       return chip('set-cat-' + cat.id, cat.name, c.cats[cat.id], function () { return (c.cats[cat.id] = !c.cats[cat.id]); });
     });
     wrap.appendChild(h('div', { class: 'srow wrap' }, [h('div', { class: 'sname', text: 'Kategorie' }), h('div', { class: 'chips' }, catChips)]));
+    var subChips = CATEGORIES.filter(function (cat) { return cat.parent === 'dokumenty'; }).map(function (cat) {
+      return chip('set-cat-' + cat.id, cat.short, c.cats[cat.id], function () { return (c.cats[cat.id] = !c.cats[cat.id]); });
+    });
+    wrap.appendChild(h('div', { class: 'srow wrap' }, [h('div', { class: 'sname', text: 'Dokumenty' }), h('div', { class: 'chips' }, subChips)]));
     wrap.appendChild(h('div', { class: 'shead', text: 'Služby' }));
 
     SERVICES.forEach(function (s) {
@@ -1647,20 +1711,43 @@
     var status = h('div', { class: 'sinfo gridstatus', text: 'Načítám…' });
     sc.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: params.title }),
       params.sub ? h('small', { text: params.sub + (filterActive() ? ' · filtr ' + filterLabel() : '') }) : null]));
+    var curOpts = params.opts;
+    var tabsEl = null;
+    if (params.tabs) {
+      tabsEl = h('div', { class: 'gridtabs' });
+      params.tabs.list.forEach(function (t) {
+        var el = h('div', { class: 'pill focusable' + (t.id === params.tabs.cur ? ' on' : ''), 'data-fid': 'tab-' + t.id, text: t.name });
+        el._select = function () {
+          Array.prototype.forEach.call(tabsEl.children, function (x) { x.classList.remove('on'); });
+          el.classList.add('on');
+          params.tabs.cur = t.id;
+          curOpts = t.opts;
+          clear(grid);
+          page = 0; done = false; seen = {}; count = 0; empty = 0; loading = false; gen++;
+          sc.scrollTop = 0;
+          loadMore();
+        };
+        tabsEl.appendChild(el);
+      });
+      sc.appendChild(tabsEl);
+    }
     sc.appendChild(grid);
     sc.appendChild(status);
     root.appendChild(sc);
 
-    var page = 0, loading = false, done = false, seen = {}, count = 0, empty = 0;
+    var page = 0, loading = false, done = false, seen = {}, count = 0, empty = 0, gen = 0;
     function loadMore() {
       if (loading || done) return;
       loading = true;
       page++;
       status.textContent = 'Načítám…';
-      discover(Object.assign({}, params.opts, { page: page })).then(function (items) {
+      var myGen = gen;
+      discover(Object.assign({}, curOpts, { page: page })).then(function (items) {
+        if (myGen !== gen) return { items: [], hidden: 0, stale: true };
         if (!items.length) { done = true; return { items: [], hidden: 0 }; }
         return applyFilter(items.filter(function (it) { return !isHidden(it) && !seen[it.key]; }));
       }).then(function (res) {
+        if (res.stale) return;
         loading = false;
         if (currentScreen !== screens.grid) return;
         var first = !grid.firstChild;
@@ -1978,7 +2065,7 @@
   window.videotekaResume = function () { onResumeApp(); };
 
   // ------------------------------------------------------------------ start
-  var pending = 1;
+  var pending = 2;
   function ready() {
     if (--pending !== 0) return;
     if (IS_TV) {
@@ -1995,4 +2082,5 @@
     }
   }
   detectApps(ready);
+  resolveProviders(ready);
 })();
