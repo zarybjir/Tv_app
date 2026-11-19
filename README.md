@@ -47,6 +47,8 @@ Disney+, Prime Video, Apple TV a SkyShowtime:
 - **Filtr podle hodnocení:** tlačítka *IMDb* (6+ / 6,5+ / 7+ / 7,5+ / 8+) a *Rotten Tomatoes*
   (60 / 75 / 90 %+) nahoře na domovské obrazovce. Filtr se týká řádků „Populární na …"
   i hledání, ne vlastního seznamu. Tituly bez hodnocení filtr schová.
+- **Česká tvorba:** tlačítko *Jazyk* nahoře přepne všechny řádky, rozbalené kategorie
+  i hledání jen na české filmy a seriály.
 - **Hledání:** napíšeš název a uvidíš, na které z tvých služeb titul běží.
 - **Skok rovnou na titul:** tlačítko „▶ Netflix" otevře film nebo seriál přímo v aplikaci
   služby, ne její úvodní obrazovku. U seriálu tě služba pustí tam, kde jsi skončil.

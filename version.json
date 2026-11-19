@@ -1,6 +1,6 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "minShell": 1,
-  "notes": "Přibyl SkyShowtime a podkategorie dokumentů (příroda, skutečné zločiny, historie, věda…).",
+  "notes": "Nový filtr Česká tvorba (tlačítko Jazyk nahoře).",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

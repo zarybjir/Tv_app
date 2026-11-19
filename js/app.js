@@ -307,7 +307,8 @@
       poster: r.poster_path || null,
       backdrop: r.backdrop_path || null,
       overview: r.overview || '',
-      vote: r.vote_average || 0
+      vote: r.vote_average || 0,
+      lang: r.original_language || ''
     };
   }
 
@@ -408,6 +409,7 @@
       with_watch_monetization_types: 'flatrate',
       sort_by: 'popularity.desc'
     };
+    if (filt().cz === 'cs') p.with_original_language = 'cs';
     var pg = opts.page || 1;
     var pages = [pg];
     if (filterActive()) {
@@ -540,6 +542,8 @@
     return settings._filter;
   }
   function filterActive() { var f = filt(); return hasRatingsSource() && (f.imdb > 0 || f.rt > 0); }
+  // jakýkoli filtr včetně jazyka (česká tvorba)
+  function anyFilter() { return filterActive() || !!filt().cz; }
   function passes(r) {
     if (omdbBlocked) return true; // bez dat nic neschovávej
     var f = filt();
@@ -553,14 +557,17 @@
     var f = filt(), parts = [];
     if (f.imdb) parts.push('IMDb ' + dec(f.imdb) + '+');
     if (f.rt) parts.push('RT ' + f.rt + ' %+');
+    if (f.cz === 'cs') parts.push('česká tvorba');
     return parts.join(' a ');
   }
   // vrátí { items, hidden } – s aktivním filtrem počká na hodnocení všech titulů
   function applyFilter(items) {
-    if (!filterActive()) return Promise.resolve({ items: items, hidden: 0 });
+    var total = items.length;
+    if (filt().cz === 'cs') items = items.filter(function (it) { return it.lang === 'cs'; });
+    if (!filterActive()) return Promise.resolve({ items: items, hidden: total - items.length });
     return Promise.all(items.map(ratingsFor)).then(function (rs) {
       var kept = items.filter(function (it, i) { return passes(rs[i]); });
-      return { items: kept, hidden: items.length - kept.length };
+      return { items: kept, hidden: total - kept.length };
     });
   }
 
@@ -1110,17 +1117,18 @@
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
   function filterPill(kind) {
-    var steps = kind === 'imdb' ? IMDB_STEPS : RT_STEPS;
+    var steps = kind === 'imdb' ? IMDB_STEPS : kind === 'cz' ? ['', 'cs'] : RT_STEPS;
     function label() {
       var v = filt()[kind];
+      if (kind === 'cz') return v === 'cs' ? 'Česká tvorba' : 'Jazyk: vše';
       if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
       return 'RT: ' + (v ? v + ' %+' : 'vše');
     }
     var el = h('div', {
       class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
       onselect: function () {
-        if (!hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr vlož v Nastavení → Klíče klíč OMDb.' : 'Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
-        var i = steps.indexOf(filt()[kind]);
+        if (kind !== 'cz' && !hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr vlož v Nastavení → Klíče klíč OMDb.' : 'Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
+        var i = steps.indexOf(filt()[kind] || steps[0]);
         filt()[kind] = steps[(i + 1) % steps.length];
         save('settings', settings);
         el.textContent = label();
@@ -1144,7 +1152,7 @@
     homeDirty = false;
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
-    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), setBtn]));
+    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), filterPill('cz'), setBtn]));
 
     var body = h('div', { class: 'vscroll', style: 'top:140px' });
     root.appendChild(body);
@@ -1179,7 +1187,7 @@
     function addRow(title, sub, fidPrefix, opts, serviceIds, tabs) {
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
-      var subText = function (extra) { return [sub, filterActive() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
+      var subText = function (extra) { return [sub, anyFilter() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
       var rowEl = row(title, subText(filterActive() ? ' · ověřuji hodnocení…' : ''), r);
       var openAll = function () { go('grid', { title: title, sub: sub, opts: opts, serviceIds: serviceIds || null, tabs: tabs || null }); };
       var head = rowEl.querySelector('h2');
@@ -1196,7 +1204,7 @@
         if (small) small.textContent = subText(res.hidden ? ' · skryto ' + res.hidden : '');
         clear(r);
         if (!items.length) {
-          rowEl.replaceChild(h('div', { class: 'note', text: filterActive() ? 'Nic nesplňuje filtr ' + filterLabel() + '.' : 'Na tvých službách tu teď nic není.' }), r);
+          rowEl.replaceChild(h('div', { class: 'note', text: anyFilter() ? 'Nic nesplňuje filtr ' + filterLabel() + '.' : 'Na tvých službách tu teď nic není.' }), r);
           return;
         }
         items.forEach(function (it, idx) {
@@ -1710,7 +1718,7 @@
     var grid = h('div', { class: 'grid' });
     var status = h('div', { class: 'sinfo gridstatus', text: 'Načítám…' });
     sc.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: params.title }),
-      params.sub ? h('small', { text: params.sub + (filterActive() ? ' · filtr ' + filterLabel() : '') }) : null]));
+      params.sub ? h('small', { text: params.sub + (anyFilter() ? ' · filtr ' + filterLabel() : '') }) : null]));
     var curOpts = params.opts;
     var tabsEl = null;
     if (params.tabs) {
