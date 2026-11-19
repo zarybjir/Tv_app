@@ -21,6 +21,17 @@ for (const f of ['js/boot.js', 'js/version.js', 'js/config.js']) {
   try { new vm.Script(fs.readFileSync(f, 'utf8'), { filename: f }); } catch (e) { fail(f + ': ' + e.message); }
 }
 
+// televize Samsung z roku 2017 (Tizen 3.0, Chromium 47) neumí CSS proměnné ani ES2015+ zápisy
+for (const f of man.files.concat(['js/boot.js'])) {
+  const src = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  if (f.endsWith('.css') && /var\(--/.test(src)) fail(f + ': CSS proměnné var(--…) starší televize neumí');
+  if (f.endsWith('.js')) {
+    if (/=>/.test(src)) fail(f + ': šipkové funkce (=>) starší televize neumí');
+    if (/(^|[^.\w])(let|const|class)\s/.test(src)) fail(f + ': let/const/class starší televize neumí');
+    if (/`/.test(src)) fail(f + ': šablonové řetězce (`) starší televize neumí');
+  }
+}
+
 // klíče patří jen do televize, ne do veřejného repozitáře
 const cfg = fs.readFileSync('js/config.js', 'utf8');
 for (const k of ['tmdbKey', 'omdbKey', 'watchmodeKey', 'motnKey']) {

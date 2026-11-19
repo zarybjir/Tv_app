@@ -1,21 +1,14 @@
 /* Videotéka – rozvržení pro 1920×1080, ovládání ovladačem.
    Bez CSS gridu a flex `gap`, aby to běželo i na starších Tizenech. */
 
-:root {
-  --bg: #0b0d12;
-  --bg2: #141821;
-  --panel: #1b202b;
-  --text: #f2f4f8;
-  --muted: #9aa3b5;
-  --accent: #ffcc4d;
-  --focus: #ffffff;
-}
+/* Barvy jsou rozepsané přímo (bez CSS proměnných), protože televize Samsung z roku 2017
+   (Tizen 3.0, Chromium 47) proměnné neumí. Paleta: pozadí #0b0d12, panel #1b202b, akcent #ffcc4d. */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   width: 1920px; height: 1080px; overflow: hidden;
-  background: var(--bg); color: var(--text);
+  background: #0b0d12; color: #f2f4f8;
   font-family: "SamsungOne", "Samsung Sans", "Roboto", "Helvetica Neue", Arial, sans-serif;
   font-size: 28px;
 }
@@ -29,22 +22,22 @@ html, body {
 /* ---------- horní lišta ---------- */
 .topbar { height: 140px; padding: 44px 96px 0; display: flex; align-items: center; }
 .brand { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
-.brand span { color: var(--accent); }
+.brand span { color: #ffcc4d; }
 .topbar .spacer { flex: 1; }
 .pill {
   display: inline-block; padding: 14px 28px; margin-left: 16px; border-radius: 40px;
-  background: var(--panel); color: var(--text); font-size: 28px;
+  background: #1b202b; color: #f2f4f8; font-size: 28px;
   transition: transform .12s, background .12s;
 }
-.pill.focus { background: var(--focus); color: #000; transform: scale(1.06); }
-.clock { margin-left: 40px; font-size: 36px; color: var(--muted); min-width: 110px; text-align: right; }
+.pill.focus { background: #ffffff; color: #000; transform: scale(1.06); }
+.clock { margin-left: 40px; font-size: 36px; color: #9aa3b5; min-width: 110px; text-align: right; }
 
 /* ---------- řádky ---------- */
 .row { margin-bottom: 36px; }
-.row h2 { font-size: 32px; font-weight: 600; padding: 0 96px 16px; color: var(--text); }
-.row h2 small { font-size: 24px; color: var(--muted); font-weight: 400; margin-left: 12px; }
+.row h2 { font-size: 32px; font-weight: 600; padding: 0 96px 16px; color: #f2f4f8; }
+.row h2 small { font-size: 24px; color: #9aa3b5; font-weight: 400; margin-left: 12px; }
 .row .hscroll { padding: 28px 96px 30px; }
-.row .note { padding: 0 96px; color: var(--muted); font-size: 26px; }
+.row .note { padding: 0 96px; color: #9aa3b5; font-size: 26px; }
 
 /* ---------- dlaždice služeb ---------- */
 .tile {
@@ -61,7 +54,7 @@ html, body {
 .tile .tstate { position: absolute; left: 24px; top: 18px; font-size: 20px; opacity: .85;
   background: rgba(0,0,0,.35); padding: 4px 12px; border-radius: 12px; }
 .tile.off { opacity: .35; }
-.tile.focus { transform: scale(1.1); box-shadow: 0 0 0 5px var(--focus), 0 18px 40px rgba(0,0,0,.6); z-index: 2; }
+.tile.focus { transform: scale(1.1); box-shadow: 0 0 0 5px #ffffff, 0 18px 40px rgba(0,0,0,.6); z-index: 2; }
 
 /* ---------- plakáty ---------- */
 .card {
@@ -71,17 +64,17 @@ html, body {
 }
 .card .poster {
   width: 210px; height: 315px; border-radius: 14px; overflow: hidden;
-  background: var(--panel); position: relative;
+  background: #1b202b; position: relative;
   box-shadow: 0 8px 20px rgba(0,0,0,.4);
 }
 .card .poster img { width: 100%; height: 100%; display: block; }
 .card .poster .ph {
   position: absolute; left: 0; top: 0; right: 0; bottom: 0; padding: 20px;
   display: flex; align-items: center; justify-content: center; text-align: center;
-  font-size: 24px; color: var(--muted);
+  font-size: 24px; color: #9aa3b5;
 }
 .card .ctitle {
-  margin-top: 12px; font-size: 22px; line-height: 28px; height: 56px; overflow: hidden; color: var(--muted);
+  margin-top: 12px; font-size: 22px; line-height: 28px; height: 56px; overflow: hidden; color: #9aa3b5;
 }
 .card .badges { position: absolute; left: 10px; top: 10px; }
 .badge {
@@ -89,8 +82,8 @@ html, body {
   margin-right: 6px; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.5);
 }
 .card.focus { transform: scale(1.1); z-index: 2; }
-.card.focus .poster { box-shadow: 0 0 0 5px var(--focus), 0 18px 40px rgba(0,0,0,.7); }
-.card.focus .ctitle { color: var(--text); }
+.card.focus .poster { box-shadow: 0 0 0 5px #ffffff, 0 18px 40px rgba(0,0,0,.7); }
+.card.focus .ctitle { color: #f2f4f8; }
 
 .card.loading .poster { background: linear-gradient(90deg, #1b202b, #252b38, #1b202b); }
 
@@ -101,77 +94,77 @@ html, body {
 }
 .backdrop-fade {
   position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
-  background: linear-gradient(90deg, var(--bg) 30%, rgba(11,13,18,.6) 70%, rgba(11,13,18,.3)),
-              linear-gradient(0deg, var(--bg) 0%, rgba(11,13,18,0) 40%);
+  background: linear-gradient(90deg, #0b0d12 30%, rgba(11,13,18,.6) 70%, rgba(11,13,18,.3)),
+              linear-gradient(0deg, #0b0d12 0%, rgba(11,13,18,0) 40%);
 }
 .detail-body { position: absolute; left: 96px; top: 110px; right: 96px; display: flex; }
 .detail-body .dposter {
   width: 380px; height: 570px; border-radius: 20px; overflow: hidden; flex: none;
-  background: var(--panel); box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  background: #1b202b; box-shadow: 0 20px 60px rgba(0,0,0,.6);
 }
 .detail-body .dposter img { width: 100%; height: 100%; display: block; }
 .detail-info { margin-left: 72px; max-width: 1150px; }
 .detail-info h1 { font-size: 64px; line-height: 72px; font-weight: 800; }
-.detail-info .meta { margin-top: 16px; color: var(--muted); font-size: 28px; }
-.detail-info .meta b { color: var(--accent); }
+.detail-info .meta { margin-top: 16px; color: #9aa3b5; font-size: 28px; }
+.detail-info .meta b { color: #ffcc4d; }
 .detail-info .overview { margin-top: 28px; font-size: 27px; line-height: 40px; color: #d5dae4;
   max-height: 160px; overflow: hidden; }
-.detail-info h3 { margin-top: 40px; font-size: 26px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 2px; }
+.detail-info h3 { margin-top: 40px; font-size: 26px; color: #9aa3b5; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; }
 .actions { margin-top: 18px; }
 .btn {
   display: inline-block; padding: 20px 38px; margin: 0 20px 20px 0; border-radius: 16px;
-  font-size: 30px; font-weight: 700; background: var(--panel); color: var(--text);
+  font-size: 30px; font-weight: 700; background: #1b202b; color: #f2f4f8;
   transition: transform .12s, box-shadow .12s;
 }
 .btn.play { color: #fff; }
-.btn.focus { transform: scale(1.07); box-shadow: 0 0 0 5px var(--focus), 0 12px 30px rgba(0,0,0,.6); }
-.btn.secondary.focus { background: var(--focus); color: #000; }
-.also { margin-top: 10px; font-size: 24px; color: var(--muted); }
+.btn.focus { transform: scale(1.07); box-shadow: 0 0 0 5px #ffffff, 0 12px 30px rgba(0,0,0,.6); }
+.btn.secondary.focus { background: #ffffff; color: #000; }
+.also { margin-top: 10px; font-size: 24px; color: #9aa3b5; }
 .unavailable { margin-top: 18px; font-size: 28px; color: #ffb4a8; }
 
 /* ---------- hledání ---------- */
 .search-wrap { position: absolute; left: 96px; top: 150px; right: 0; bottom: 0; }
 .kbd { position: absolute; left: 0; top: 0; width: 600px; }
 .query {
-  height: 84px; border-radius: 16px; background: var(--panel); padding: 0 28px;
+  height: 84px; border-radius: 16px; background: #1b202b; padding: 0 28px;
   font-size: 38px; line-height: 84px; overflow: hidden; white-space: nowrap; margin-bottom: 28px;
 }
-.query .cursor { display: inline-block; width: 3px; height: 44px; background: var(--accent); vertical-align: middle; margin-left: 4px; }
-.query .hint { color: var(--muted); }
+.query .cursor { display: inline-block; width: 3px; height: 44px; background: #ffcc4d; vertical-align: middle; margin-left: 4px; }
+.query .hint { color: #9aa3b5; }
 .key {
   float: left; width: 76px; height: 64px; margin: 0 8px 8px 0; border-radius: 12px;
-  background: var(--bg2); text-align: center; line-height: 64px; font-size: 28px; font-weight: 600;
+  background: #141821; text-align: center; line-height: 64px; font-size: 28px; font-weight: 600;
 }
 .key.wide { width: 244px; }
 .key.mid { width: 160px; }
-.key.focus { background: var(--focus); color: #000; transform: scale(1.08); }
+.key.focus { background: #ffffff; color: #000; transform: scale(1.08); }
 .kbd .clear { clear: both; }
 .results { position: absolute; left: 660px; top: 0; right: 0; bottom: 0; }
 .results .vscroll { top: 0; padding: 0 60px 0 30px; }
 .results .grid { padding: 10px 0 80px; }
 .results .card { margin-bottom: 26px; }
-.results .msg { color: var(--muted); font-size: 30px; padding-top: 10px; }
+.results .msg { color: #9aa3b5; font-size: 30px; padding-top: 10px; }
 
 /* ---------- nastavení ---------- */
 .settings { position: absolute; left: 96px; top: 140px; right: 96px; bottom: 0; padding-top: 10px; }
 .srow {
   display: flex; align-items: center; padding: 18px 28px; margin-bottom: 16px;
-  background: var(--bg2); border-radius: 18px;
+  background: #141821; border-radius: 18px;
 }
 .srow .sname { width: 250px; font-size: 34px; font-weight: 700; }
 .srow .sdot { width: 22px; height: 22px; border-radius: 11px; margin-right: 20px; }
 .srow .btn { margin: 0 16px 0 0; font-size: 24px; padding: 14px 22px; font-weight: 600; }
-.srow .btn.focus { background: var(--focus); color: #000; }
-.sinfo { color: var(--muted); font-size: 24px; line-height: 36px; margin-top: 26px; }
-.sinfo b { color: var(--text); }
+.srow .btn.focus { background: #ffffff; color: #000; }
+.sinfo { color: #9aa3b5; font-size: 24px; line-height: 36px; margin-top: 26px; }
+.sinfo b { color: #f2f4f8; }
 
 /* ---------- výběr aplikace ---------- */
 .picker { position: absolute; left: 96px; top: 150px; width: 1000px; bottom: 0; }
 .picker .vscroll { top: 70px; }
 .picker h2 { font-size: 34px; }
-.pitem { padding: 18px 28px; margin-bottom: 10px; border-radius: 14px; background: var(--bg2); font-size: 28px; }
-.pitem small { color: var(--muted); font-size: 20px; margin-left: 14px; }
-.pitem.focus { background: var(--focus); color: #000; }
+.pitem { padding: 18px 28px; margin-bottom: 10px; border-radius: 14px; background: #141821; font-size: 28px; }
+.pitem small { color: #9aa3b5; font-size: 20px; margin-left: 14px; }
+.pitem.focus { background: #ffffff; color: #000; }
 .pitem.focus small { color: #444; }
 
 /* ---------- toast ---------- */
@@ -183,7 +176,7 @@ html, body {
 }
 #toast.show { opacity: 1; }
 
-.hintbar { position: absolute; left: 96px; bottom: 34px; color: var(--muted); font-size: 22px; }
+.hintbar { position: absolute; left: 96px; bottom: 34px; color: #9aa3b5; font-size: 22px; }
 
 /* ---------- hodnocení ---------- */
 .card .rbar { position: absolute; left: 8px; right: 8px; bottom: 8px; white-space: normal; }
@@ -197,15 +190,15 @@ html, body {
 .rchip.mc { background: #333a48; color: #fff; }
 .dratings { margin-top: 20px; min-height: 52px; }
 .dratings .rchip { font-size: 28px; padding: 8px 16px; border-radius: 12px; margin: 0 14px 0 0; }
-.dratings .votes { color: var(--muted); font-size: 23px; margin-right: 26px; }
-.pill.on { background: var(--accent); color: #000; font-weight: 700; }
-.pill.on.focus { background: var(--focus); }
+.dratings .votes { color: #9aa3b5; font-size: 23px; margin-right: 26px; }
+.pill.on { background: #ffcc4d; color: #000; font-weight: 700; }
+.pill.on.focus { background: #ffffff; }
 .results .msg.small { font-size: 22px; padding: 0 0 16px; }
 
 /* ---------- dostupnost a upozornění ---------- */
 .banner {
   margin: 4px 96px 26px; padding: 18px 28px; border-radius: 16px; background: #1f2633;
-  color: #d5dae4; font-size: 24px; line-height: 34px; white-space: normal; border-left: 6px solid var(--accent);
+  color: #d5dae4; font-size: 24px; line-height: 34px; white-space: normal; border-left: 6px solid #ffcc4d;
 }
 .card.away .poster img, .card.away .poster .ph { opacity: .3; }
 .awaytag {
@@ -214,71 +207,71 @@ html, body {
 }
 
 /* ---------- zpětná vazba ke skoku na titul ---------- */
-.feedback { margin-top: 24px; padding: 20px 24px 6px; border-radius: 16px; background: #1f2633; border-left: 6px solid var(--accent); }
+.feedback { margin-top: 24px; padding: 20px 24px 6px; border-radius: 16px; background: #1f2633; border-left: 6px solid #ffcc4d; }
 .feedback .fbq { font-size: 28px; margin-bottom: 16px; }
 .feedback .btn { font-size: 26px; padding: 14px 28px; }
 
 /* ---------- aktualizace ---------- */
-.srow .sver { font-size: 22px; color: var(--muted); margin-right: 20px; max-width: 520px; }
+.srow .sver { font-size: 22px; color: #9aa3b5; margin-right: 20px; max-width: 520px; }
 
 /* ---------- kategorie v nastavení ---------- */
-.shead { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin: 18px 0 14px; }
+.shead { font-size: 24px; color: #9aa3b5; text-transform: uppercase; letter-spacing: 2px; margin: 18px 0 14px; }
 .srow.wrap { align-items: flex-start; }
 .srow.wrap .sname { padding-top: 10px; }
 .chips { flex: 1; }
 .srow .btn.chip { margin: 0 14px 14px 0; opacity: .6; }
-.srow .btn.chip.on { opacity: 1; background: #2c3546; color: var(--text); box-shadow: inset 0 0 0 2px var(--accent); }
-.srow .btn.chip.focus { opacity: 1; background: var(--focus); color: #000; }
+.srow .btn.chip.on { opacity: 1; background: #2c3546; color: #f2f4f8; box-shadow: inset 0 0 0 2px #ffcc4d; }
+.srow .btn.chip.focus { opacity: 1; background: #ffffff; color: #000; }
 
 /* ---------- nové díly, přibylo, pořadí ---------- */
 .newtag {
   position: absolute; left: 8px; right: 8px; top: 46px; text-align: center; font-size: 18px; font-weight: 800;
-  background: var(--accent); color: #000; padding: 6px 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  background: #ffcc4d; color: #000; padding: 6px 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.5);
 }
-.newtag.soon { background: rgba(20,24,33,.92); color: var(--text); box-shadow: inset 0 0 0 2px var(--accent); }
+.newtag.soon { background: rgba(20,24,33,.92); color: #f2f4f8; box-shadow: inset 0 0 0 2px #ffcc4d; }
 .card.clearcard .poster { background: #1f2633; }
-.card.clearcard .ph { color: var(--text); font-size: 26px; font-weight: 700; }
+.card.clearcard .ph { color: #f2f4f8; font-size: 26px; font-weight: 700; }
 .pitem.off { opacity: .55; }
-.pitem.moving { background: var(--accent) !important; color: #000; transform: translateX(24px); }
+.pitem.moving { background: #ffcc4d !important; color: #000; transform: translateX(24px); }
 .side-help {
-  position: absolute; left: 1180px; top: 220px; width: 640px; color: var(--muted); font-size: 25px; line-height: 38px;
+  position: absolute; left: 1180px; top: 220px; width: 640px; color: #9aa3b5; font-size: 25px; line-height: 38px;
 }
 
 /* ---------- série a díly ---------- */
-.eptitle { font-size: 32px; color: var(--muted); margin-right: 20px; }
+.eptitle { font-size: 32px; color: #9aa3b5; margin-right: 20px; }
 .episodes { position: absolute; left: 96px; right: 96px; top: 150px; bottom: 0; }
 .seasons { position: absolute; left: 0; top: 0; bottom: 0; width: 360px; }
 .season { font-size: 28px; }
-.season.cur { box-shadow: inset 6px 0 0 var(--accent); }
+.season.cur { box-shadow: inset 6px 0 0 #ffcc4d; }
 .eplist { position: absolute; left: 400px; right: 0; top: 0; bottom: 0; }
-.ep { display: flex; padding: 14px; margin-bottom: 12px; border-radius: 16px; background: var(--bg2); transition: transform .12s; }
-.ep.focus { background: var(--focus); color: #000; }
-.ep .still { width: 256px; height: 144px; flex: none; border-radius: 10px; overflow: hidden; background: var(--panel); position: relative; }
+.ep { display: flex; padding: 14px; margin-bottom: 12px; border-radius: 16px; background: #141821; transition: transform .12s; }
+.ep.focus { background: #ffffff; color: #000; }
+.ep .still { width: 256px; height: 144px; flex: none; border-radius: 10px; overflow: hidden; background: #1b202b; position: relative; }
 .ep .still img { width: 100%; height: 100%; display: block; }
 .ep .epcheck { display: none; position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; border-radius: 18px;
-  background: var(--accent); color: #000; font-weight: 900; text-align: center; line-height: 36px; font-size: 22px; }
+  background: #ffcc4d; color: #000; font-weight: 900; text-align: center; line-height: 36px; font-size: 22px; }
 .ep.watched .epcheck { display: block; }
 .ep.watched .still img { opacity: .45; }
 .ep .eptext { margin-left: 22px; min-width: 0; }
 .ep .epname { font-size: 28px; font-weight: 700; }
-.ep .epmeta { font-size: 22px; color: var(--muted); margin-top: 4px; }
+.ep .epmeta { font-size: 22px; color: #9aa3b5; margin-top: 4px; }
 .ep.focus .epmeta { color: #444; }
 .ep .epov { font-size: 22px; line-height: 30px; margin-top: 8px; max-height: 60px; overflow: hidden; color: #c5cad4; }
 .ep.focus .epov { color: #222; }
-.ep.next { box-shadow: inset 0 0 0 3px var(--accent); }
+.ep.next { box-shadow: inset 0 0 0 3px #ffcc4d; }
 .ep.future { opacity: .55; }
 
 /* ---------- celá kategorie ---------- */
 /* na televizi otevírá kategorii dlaždice „Zobrazit vše" na konci řádku, v mobilu i nadpis */
-.rowhead .more { font-size: 22px; color: var(--muted); font-weight: 400; margin-left: 18px; }
-.rowhead.focus { background: var(--focus); color: #000; }
+.rowhead .more { font-size: 22px; color: #9aa3b5; font-weight: 400; margin-left: 18px; }
+.rowhead.focus { background: #ffffff; color: #000; }
 .rowhead.focus small, .rowhead.focus .more { color: #333; }
 .card.morecard .poster { background: #1f2633; }
-.card.morecard .ph { color: var(--text); font-size: 26px; font-weight: 700; }
+.card.morecard .ph { color: #f2f4f8; font-size: 26px; font-weight: 700; }
 .gridscreen { top: 140px; padding: 0 96px; }
 .gridhead { margin: 6px 0 20px; }
 .gridhead .gtitle { font-size: 40px; font-weight: 800; }
-.gridhead small { font-size: 24px; color: var(--muted); margin-left: 16px; }
+.gridhead small { font-size: 24px; color: #9aa3b5; margin-left: 16px; }
 .gridscreen .grid { padding-top: 14px; }
 .gridscreen .card { margin-bottom: 30px; }
 .gridstatus { padding-bottom: 140px; }
@@ -288,7 +281,7 @@ html, body {
 
 .dubtag { position: absolute; right: 8px; top: 8px; background: #fff; color: #0b0d12; font-size: 16px; font-weight: 900;
   padding: 3px 8px; border-radius: 7px; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
-.dubline { color: var(--text); }
+.dubline { color: #f2f4f8; }
 
 /* ---------- odchází / přidáno ---------- */
 .leavetag, .addtag {
@@ -296,29 +289,29 @@ html, body {
   padding: 5px 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.5);
 }
 .leavetag { background: #ff5a4f; color: #fff; }
-.addtag { background: rgba(20,24,33,.92); color: var(--text); }
+.addtag { background: rgba(20,24,33,.92); color: #f2f4f8; }
 
 /* ---------- herci v detailu ---------- */
 .people { margin-top: 18px; }
 .prow { margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
-.plabel { display: inline-block; width: 110px; color: var(--muted); font-size: 22px; vertical-align: middle; }
+.plabel { display: inline-block; width: 110px; color: #9aa3b5; font-size: 22px; vertical-align: middle; }
 .btn.person { font-size: 21px; font-weight: 600; padding: 8px 16px; margin: 0 10px 8px 0; border-radius: 10px; background: rgba(27,32,43,.85); }
-.btn.person.focus { background: var(--focus); color: #000; }
+.btn.person.focus { background: #ffffff; color: #000; }
 
 /* ---------- herec ---------- */
 .personhead { display: flex; margin: 6px 0 26px; }
-.pphoto { width: 160px; height: 240px; border-radius: 14px; overflow: hidden; background: var(--panel); flex: none; }
+.pphoto { width: 160px; height: 240px; border-radius: 14px; overflow: hidden; background: #1b202b; flex: none; }
 .pphoto img { width: 100%; height: 100%; display: block; }
 .ptext { margin-left: 30px; max-width: 1200px; }
 .ptext .gtitle { font-size: 44px; font-weight: 800; }
-.pmeta { color: var(--muted); font-size: 24px; margin-top: 6px; }
+.pmeta { color: #9aa3b5; font-size: 24px; margin-top: 6px; }
 .pbio { font-size: 22px; line-height: 32px; color: #c5cad4; margin-top: 12px; max-height: 128px; overflow: hidden; }
 
 /* ---------- kalendář a párování ---------- */
 .calbody { top: 140px; }
 .calbody .gridhead { padding: 0 96px; }
 .calstatus { padding: 0 96px; }
-.paircode { font-size: 40px; font-weight: 900; letter-spacing: 4px; color: var(--accent); margin-right: 26px; font-family: monospace; }
+.paircode { font-size: 40px; font-weight: 900; letter-spacing: 4px; color: #ffcc4d; margin-right: 26px; font-family: monospace; }
 
 .pairrow { align-items: flex-start; }
 .pairqr { width: 260px; height: 260px; border-radius: 12px; background: #fff; padding: 8px; margin-right: 30px; image-rendering: pixelated; flex: none; }
@@ -348,8 +341,8 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .topbar .spacer { flex-basis: 100%; height: 8px; }
 .mobile .clock { display: none; }
 .mobile .pill { padding: 7px 13px; margin: 0 8px 8px 0; font-size: 15px; }
-.mobile .pill.focus { background: var(--panel); color: var(--text); }
-.mobile .pill.on, .mobile .pill.on.focus { background: var(--accent); color: #000; }
+.mobile .pill.focus { background: #1b202b; color: #f2f4f8; }
+.mobile .pill.on, .mobile .pill.on.focus { background: #ffcc4d; color: #000; }
 
 /* řádky a plakáty */
 .mobile .row { margin-bottom: 14px; }
@@ -367,7 +360,7 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .card .poster .ph { font-size: 13px; padding: 8px; }
 .mobile .card .ctitle { margin-top: 6px; font-size: 13px; line-height: 17px; height: 34px; }
 .mobile .card.focus .poster { box-shadow: 0 6px 16px rgba(0,0,0,.4); }
-.mobile .card.focus .ctitle { color: var(--muted); }
+.mobile .card.focus .ctitle { color: #9aa3b5; }
 .mobile .badge { font-size: 10px; padding: 2px 5px; border-radius: 5px; margin-right: 3px; }
 .mobile .card .badges { left: 5px; top: 5px; }
 .mobile .rchip { font-size: 10px; padding: 2px 5px; border-radius: 5px; margin: 3px 3px 0 0; }
@@ -382,7 +375,7 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .kbd { position: static; width: auto; padding: 0 16px 10px; }
 .mobile .minput {
   width: 100%; font-size: 17px; padding: 12px 14px; border-radius: 12px; border: 0; outline: 0;
-  background: var(--panel); color: var(--text); font-family: inherit; -webkit-appearance: none;
+  background: #1b202b; color: #f2f4f8; font-family: inherit; -webkit-appearance: none;
 }
 .mobile .results { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .mobile .results .vscroll { padding: 0 6px 0 16px; }
@@ -405,7 +398,7 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .dratings .votes { font-size: 13px; margin-right: 10px; }
 .mobile .btn { font-size: 16px; padding: 11px 16px; margin: 0 8px 8px 0; border-radius: 12px; }
 .mobile .btn.focus { box-shadow: none; }
-.mobile .btn.secondary.focus { background: var(--panel); color: var(--text); }
+.mobile .btn.secondary.focus { background: #1b202b; color: #f2f4f8; }
 .mobile .also, .mobile .unavailable { font-size: 14px; }
 .mobile .hintbar { display: none; }
 .mobile .feedback { display: none; }
@@ -418,15 +411,15 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .srow .sdot { width: 12px; height: 12px; margin-right: 10px; margin-bottom: 8px; }
 .mobile .srow .sdot + .sname { width: auto; flex: 1; }
 .mobile .srow .btn { font-size: 14px; padding: 8px 12px; margin: 0 8px 8px 0; }
-.mobile .srow .btn.focus { background: var(--panel); color: var(--text); }
+.mobile .srow .btn.focus { background: #1b202b; color: #f2f4f8; }
 .mobile .srow .btn.chip { margin: 0 6px 6px 0; }
-.mobile .srow .btn.chip.on, .mobile .srow .btn.chip.on.focus { background: #2c3546; color: var(--text); opacity: 1; }
+.mobile .srow .btn.chip.on, .mobile .srow .btn.chip.on.focus { background: #2c3546; color: #f2f4f8; opacity: 1; }
 .mobile .srow .btn.chip.focus { opacity: .6; }
 .mobile .srow .sver { font-size: 13px; max-width: none; width: 100%; }
 .mobile .sinfo { font-size: 13px; line-height: 19px; margin: 6px 0 12px; }
 .mobile .keys .keyrow { display: block; width: 100%; margin-bottom: 10px; }
-.mobile .keys .keyrow span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-.mobile .keys .minput { font-size: 14px; padding: 10px 12px; background: var(--bg); }
+.mobile .keys .keyrow span { display: block; font-size: 13px; color: #9aa3b5; margin-bottom: 4px; }
+.mobile .keys .minput { font-size: 14px; padding: 10px 12px; background: #0b0d12; }
 
 /* seznamy (výběr aplikace, pořadí, skryté) */
 .mobile .picker { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 16px; }
@@ -434,8 +427,8 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .picker .vscroll { top: auto; }
 .mobile .pitem { font-size: 16px; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; }
 .mobile .pitem small { font-size: 12px; margin-left: 8px; }
-.mobile .pitem.focus { background: var(--bg2); color: var(--text); }
-.mobile .pitem.focus small { color: var(--muted); }
+.mobile .pitem.focus { background: #141821; color: #f2f4f8; }
+.mobile .pitem.focus small { color: #9aa3b5; }
 .mobile .pitem .mvs { margin-left: auto; }
 .mobile .pitem .mv { display: inline-block; width: 40px; height: 34px; line-height: 34px; text-align: center; margin-left: 6px; border-radius: 8px; background: #2c3546; font-size: 14px; }
 .mobile .side-help { position: static; width: auto; font-size: 13px; line-height: 19px; padding: 8px 16px 16px; flex: none; }
@@ -449,23 +442,23 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .seasons { position: relative; width: auto; flex: none; display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; }
 .mobile .seasons .season { flex: none; margin: 0 8px 0 0; display: block; white-space: nowrap; font-size: 15px; padding: 9px 14px; }
 .mobile .seasons .sinfo { white-space: nowrap; }
-.mobile .season.cur { box-shadow: inset 0 -3px 0 var(--accent); }
+.mobile .season.cur { box-shadow: inset 0 -3px 0 #ffcc4d; }
 .mobile .eplist { position: relative; left: auto; flex: 1; }
 .mobile .ep { padding: 8px; margin-bottom: 8px; border-radius: 10px; }
-.mobile .ep.focus { background: var(--bg2); color: var(--text); }
+.mobile .ep.focus { background: #141821; color: #f2f4f8; }
 .mobile .ep .still { width: 128px; height: 72px; border-radius: 6px; }
 .mobile .ep .epcheck { width: 22px; height: 22px; line-height: 22px; font-size: 13px; right: 4px; top: 4px; border-radius: 11px; }
 .mobile .ep .eptext { margin-left: 10px; }
 .mobile .ep .epname { font-size: 15px; }
-.mobile .ep .epmeta, .mobile .ep.focus .epmeta { font-size: 12px; color: var(--muted); }
+.mobile .ep .epmeta, .mobile .ep.focus .epmeta { font-size: 12px; color: #9aa3b5; }
 .mobile .ep .epov, .mobile .ep.focus .epov { font-size: 12px; line-height: 16px; max-height: 32px; color: #c5cad4; }
 
 /* celá kategorie – mobil */
 .mobile .row h2.rowhead { padding: 0 16px 4px; }
-.mobile .rowhead .more { font-size: 13px; margin-left: 8px; color: var(--accent); }
-.mobile .rowhead.focus { background: none; color: var(--text); }
-.mobile .rowhead.focus small { color: var(--muted); }
-.mobile .rowhead.focus .more { color: var(--accent); }
+.mobile .rowhead .more { font-size: 13px; margin-left: 8px; color: #ffcc4d; }
+.mobile .rowhead.focus { background: none; color: #f2f4f8; }
+.mobile .rowhead.focus small { color: #9aa3b5; }
+.mobile .rowhead.focus .more { color: #ffcc4d; }
 .mobile .card.morecard .ph { font-size: 15px; }
 .mobile .gridscreen { padding: 0 6px 0 16px; }
 .mobile .gridhead .gtitle { font-size: 22px; }
@@ -485,7 +478,7 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .prow { white-space: normal; overflow: visible; }
 .mobile .plabel { display: block; width: auto; font-size: 12px; margin-bottom: 4px; }
 .mobile .btn.person { font-size: 13px; padding: 6px 10px; margin: 0 6px 6px 0; border-radius: 8px; }
-.mobile .btn.person.focus { background: rgba(27,32,43,.85); color: var(--text); }
+.mobile .btn.person.focus { background: rgba(27,32,43,.85); color: #f2f4f8; }
 .mobile .personhead { margin: 0 0 14px; }
 .mobile .pphoto { width: 90px; height: 135px; border-radius: 10px; }
 .mobile .ptext { margin-left: 14px; }
