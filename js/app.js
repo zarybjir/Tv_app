@@ -865,20 +865,23 @@
       return;
     }
     if (!IS_TV) { toast('V televizi by se teď spustila aplikace ' + service.name + '.'); return; }
-    var ids = candidateIds(service), i = 0;
+    var ids = candidateIds(service), i = 0, errs = [];
     var mode = launchMode(service);
     toast('Spouštím ' + service.name + '…');
-    (function tryNext() {
+    function fail(id, e) { errs.push(id + ': ' + ((e && (e.name || e.message)) || 'chyba')); tryNext(); }
+    function ok() { toast(service.name + ': televize hlásí spuštěno (' + ids[i - 1] + ')'); afterLaunch(); }
+    function tryNext() {
       if (i >= ids.length) {
-        toast('Aplikaci ' + service.name + ' se nepodařilo spustit. Vyber ji v Nastavení.');
+        toast('Aplikaci ' + service.name + ' se nepodařilo spustit – ' + errs.join(', '));
         return;
       }
       var id = ids[i++];
       try {
-        if (mode === 'plain') window.tizen.application.launch(id, afterLaunch, tryNext);
-        else window.tizen.application.launchAppControl(launchControl(mode), id, afterLaunch, tryNext, null);
-      } catch (e) { tryNext(); }
-    })();
+        if (mode === 'plain') window.tizen.application.launch(id, ok, function (e) { fail(id, e); });
+        else window.tizen.application.launchAppControl(launchControl(mode), id, ok, function (e) { fail(id, e); }, null);
+      } catch (e) { fail(id, e); }
+    }
+    tryNext();
   }
 
   // Stará televize má málo paměti: Netflix apod. se nemusí rozběhnout, když Videotéka
@@ -891,7 +894,7 @@
     }
     setTimeout(function () {
       try { window.tizen.application.getCurrentApplication().exit(); } catch (e) { /* nic */ }
-    }, 700);
+    }, 5000);
   }
 
   // Způsob spuštění aplikace služby (kdyby některá služba potřebovala jiný).
@@ -918,15 +921,21 @@
   // Po návratu z aplikace se Videotéka zeptá, jestli se otevřel titul, a podle odpovědi
   // si zapamatuje fungující způsob, nebo zkusí další.
   var DEEP_METHODS = ['view', 'payload', 'payload-json'];
-  var DEEP_DEFAULT = { netflix: 'payload-json' };
-  var DEEP_LABEL = { auto: 'automaticky', view: 'způsob 1', payload: 'způsob 2', 'payload-json': 'způsob 3', off: 'vypnuto' };
+  // Netflix (systémová aplikace Samsungu) čte PAYLOAD = {"values": "m=<id>&…"} jako dlaždice Smart Hubu
+  var NF_METHODS = ['nf-plain', 'nf-mdp', 'payload-json'];
+  var DEEP_DEFAULT = { netflix: 'nf-plain' };
+  function deepMethodsFor(service) { return service.id === 'netflix' ? NF_METHODS : DEEP_METHODS; }
+  var DEEP_LABEL = { auto: 'automaticky', view: 'způsob 1', payload: 'způsob 2', 'payload-json': 'způsob 3', off: 'vypnuto',
+    'nf-plain': 'způsob 1', 'nf-mdp': 'způsob 2' };
   var linkCache = load('links', {}); // { 'movie:123': { t, links: { netflix: { CZ: url } } } }
   var pendingFeedback = null;
 
   function deepMethod(service) {
-    var st = svcSettings(service);
-    if (st.deep && st.deep !== 'auto') return st.deep;
-    return st.deepOk || DEEP_DEFAULT[service.id] || 'view';
+    var st = svcSettings(service), list = deepMethodsFor(service);
+    // u Netflixu přešly nové formáty – starší uložená volba z jiného seznamu se nepoužije
+    if (st.deep && st.deep !== 'auto' && (st.deep === 'off' || list.indexOf(st.deep) >= 0)) return st.deep;
+    if (st.deepOk && list.indexOf(st.deepOk) >= 0) return st.deepOk;
+    return DEEP_DEFAULT[service.id] || list[0];
   }
 
   function titleLinks(item) {
@@ -966,6 +975,15 @@
   function buildControl(method, service, url) {
     var T = window.tizen;
     var data = function (k, v) { return new T.ApplicationControlData(k, [v]); };
+    var nfId = (/netflix\.com\/(?:[a-z-]+\/)?(?:title|watch)\/(\d+)/.exec(url) || [])[1];
+    if ((method === 'nf-plain' || method === 'nf-mdp') && nfId) {
+      var values = method === 'nf-plain'
+        ? 'm=' + nfId + '&source_type=4'
+        : 'm=' + nfId + '&trackId=254080000&&source_type_payload=' +
+          encodeURIComponent('groupIndex=2&tileIndex=6&action=mdp&movieId=' + nfId + '&trackId=254081000');
+      return new T.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null,
+        [data('PAYLOAD', JSON.stringify({ values: values }))]);
+    }
     if (method === 'view') {
       return new T.ApplicationControl('http://tizen.org/appcontrol/operation/view', url, null, null, [data('PAYLOAD', url)]);
     }
@@ -1032,7 +1050,7 @@
     var no = h('div', { class: 'btn secondary focusable', 'data-fid': 'fb-no', text: 'Ne, jen úvodní obrazovka',
       onselect: function () {
         var tried = (st.deepTried || []).concat([fb.method]);
-        var next = DEEP_METHODS.filter(function (m) { return tried.indexOf(m) < 0; })[0];
+        var next = deepMethodsFor(fb.service).filter(function (m) { return tried.indexOf(m) < 0; })[0];
         st.deepTried = tried;
         st.deep = next || 'off';
         save('settings', settings);
@@ -1972,7 +1990,7 @@
         class: 'btn focusable', 'data-fid': 'set-deep-' + s.id,
         text: 'Skok na titul: ' + deepLabel(s),
         onselect: function () {
-          var order = ['auto'].concat(DEEP_METHODS).concat(['off']);
+          var order = ['auto'].concat(deepMethodsFor(s)).concat(['off']);
           var cur = st.deep || 'auto';
           st.deep = order[(order.indexOf(cur) + 1) % order.length];
           st.deepTried = [];
