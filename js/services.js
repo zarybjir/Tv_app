@@ -10,7 +10,7 @@ window.SERVICES = [
     colors: ['#e50914', '#3d0205'],
     providers: [8, 1796],
     match: /netflix/i,
-    appIds: ['RN1MCdNq8t.Netflix', 'org.tizen.netflix-app', '3201907018807']
+    appIds: ['org.tizen.netflix-app', 'RN1MCdNq8t.Netflix']
   },
   {
     id: 'hbo',

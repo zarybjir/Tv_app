@@ -894,10 +894,10 @@
     }, 700);
   }
 
-  // Způsob spuštění aplikace služby. Starý Netflix na Samsungu při obyčejném spuštění
-  // zůstane černý – chce vědět, odkud ho spouštíme (jako z nabídky televize).
+  // Způsob spuštění aplikace služby (kdyby některá služba potřebovala jiný).
+  // Netflix je na Samsungu systémová aplikace org.tizen.netflix-app.
   var LAUNCH_MODES = ['plain', 'control', 'payload'];
-  var LAUNCH_DEFAULT = { netflix: 'payload' };
+  var LAUNCH_DEFAULT = {};
   var LAUNCH_LABEL = { plain: 'způsob 1', control: 'způsob 2', payload: 'způsob 3' };
   function launchMode(service) {
     var m = svcSettings(service).launchMode;

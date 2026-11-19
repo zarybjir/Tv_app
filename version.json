@@ -1,6 +1,6 @@
 {
-  "version": "1.19.0",
+  "version": "1.20.0",
   "minShell": 1,
-  "notes": "Po spuštění Netflixu a dalších služeb se Videotéka v televizi zavře a uvolní paměť.",
+  "notes": "Netflix se v televizi spouští správně (systémová aplikace Samsungu).",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }
