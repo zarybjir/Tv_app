@@ -1,6 +1,6 @@
 {
-  "version": "1.16.0",
+  "version": "1.16.1",
   "minShell": 1,
-  "notes": "Herci a režie v detailu, Kalendář, řádky Nově přidáno a Brzy odchází podle skutečného katalogu, Pošli do TV z mobilu.",
+  "notes": "Oprava: verze 1.16.0 se na starší instalaci nespustila (černá obrazovka). Teď přináší herce, Kalendář, Brzy odchází a Pošli do TV.",
   "files": ["css/style.css", "js/services.js", "js/app.js"]
 }

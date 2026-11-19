@@ -172,7 +172,15 @@
   var history = [];
 
   function defineScreen(name, render) {
-    screens[name] = { name: name, el: $('screen-' + name), render: render, lastFocus: null };
+    // index.html patří k instalaci a aktualizace ho nemění – chybějící obrazovku si vytvoř sám
+    var el = $('screen-' + name);
+    if (!el) {
+      el = document.createElement('section');
+      el.id = 'screen-' + name;
+      el.className = 'screen';
+      ($('app') || document.body).appendChild(el);
+    }
+    screens[name] = { name: name, el: el, render: render, lastFocus: null };
   }
 
   // ------------------------------------------------------------------ pamatování pozice (posun obrazovky a řádků)
