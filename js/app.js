@@ -875,10 +875,23 @@
       }
       var id = ids[i++];
       try {
-        if (mode === 'plain') window.tizen.application.launch(id, function () {}, tryNext);
-        else window.tizen.application.launchAppControl(launchControl(mode), id, function () {}, tryNext, null);
+        if (mode === 'plain') window.tizen.application.launch(id, afterLaunch, tryNext);
+        else window.tizen.application.launchAppControl(launchControl(mode), id, afterLaunch, tryNext, null);
       } catch (e) { tryNext(); }
     })();
+  }
+
+  // Stará televize má málo paměti: Netflix apod. se nemusí rozběhnout, když Videotéka
+  // zůstane běžet na pozadí. Po spuštění služby se proto Videotéka zavře.
+  function closeAfterLaunch() { return IS_TV && settings._closeAfter !== false; }
+  function afterLaunch() {
+    if (!closeAfterLaunch()) return;
+    if (pendingFeedback) {
+      save('pendingFb', { s: pendingFeedback.service.id, m: pendingFeedback.method, item: pendingFeedback.item, t: Date.now() });
+    }
+    setTimeout(function () {
+      try { window.tizen.application.getCurrentApplication().exit(); } catch (e) { /* nic */ }
+    }, 700);
   }
 
   // Způsob spuštění aplikace služby. Starý Netflix na Samsungu při obyčejném spuštění
@@ -977,6 +990,7 @@
       try {
         window.tizen.application.launchAppControl(buildControl(method, service, url), id, function () {
           if (!svcSettings(service).deepOk) pendingFeedback = { service: service, method: method, item: item };
+          afterLaunch();
         }, tryNext, null);
       } catch (e) { tryNext(); }
     })();
@@ -2040,6 +2054,18 @@
       ]));
     }
 
+    if (IS_TV) {
+      var closeBtn = h('div', { class: 'btn focusable', 'data-fid': 'set-closeafter',
+        text: 'Po spuštění služby zavřít Videotéku: ' + (closeAfterLaunch() ? 'ano' : 'ne'),
+        onselect: function () {
+          settings._closeAfter = !closeAfterLaunch();
+          save('settings', settings);
+          closeBtn.textContent = 'Po spuštění služby zavřít Videotéku: ' + (closeAfterLaunch() ? 'ano' : 'ne');
+        } });
+      wrap.appendChild(h('div', { class: 'srow' }, [h('div', { class: 'sname', text: 'Spouštění' }), closeBtn,
+        h('div', { class: 'sver', text: 'Uvolní paměť pro Netflix apod. Zpět do Videotéky se vrátíš přes APPS.' })]));
+    }
+
     wrap.appendChild(h('div', { class: 'srow' }, [
       h('div', { class: 'sname', text: 'Skryté' }),
       h('div', { class: 'btn focusable', 'data-fid': 'set-hidden', text: 'Skryté a viděné tituly (' + Object.keys(hiddenItems).length + ')…',
@@ -2766,6 +2792,16 @@
       } catch (e) { /* starší TV */ }
     }
     go('home');
+    var fb = load('pendingFb', null);
+    if (fb) {
+      save('pendingFb', null);
+      var fsvc = serviceById(fb.s);
+      if (fsvc && fb.item && Date.now() - fb.t < 2 * 3600 * 1000) {
+        pendingFeedback = { service: fsvc, method: fb.m, item: fb.item };
+        go('detail', { item: fb.item });
+        setTimeout(askFeedback, 900);
+      }
+    }
     setTimeout(checkArrivals, 2500);
     startTvListener();
     if (UPD) {

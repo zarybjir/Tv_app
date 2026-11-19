@@ -1,6 +1,6 @@
 {
-  "version": "1.18.0",
+  "version": "1.19.0",
   "minShell": 1,
-  "notes": "Správná označení HBO Max, Apple TV a SkyShowtime v televizi; Netflix se spouští jako z nabídky televize.",
+  "notes": "Po spuštění Netflixu a dalších služeb se Videotéka v televizi zavře a uvolní paměť.",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }
