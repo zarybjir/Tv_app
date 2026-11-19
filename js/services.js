@@ -19,7 +19,7 @@ window.SERVICES = [
     colors: ['#7b2ff7', '#1a0840'],
     providers: [1899, 384],
     match: /hbo|^max$/i,
-    appIds: ['3202301029760', '3201601007230']
+    appIds: ['5b8c3eb16b.BeamCTVDev', '8GRMGDJSAD.hbogo']
   },
   {
     id: 'disney',
@@ -46,7 +46,7 @@ window.SERVICES = [
     colors: ['#6b7280', '#111214'],
     providers: [350],
     match: /apple\s*tv/i,
-    appIds: ['3201807016597']
+    appIds: ['Y6A54cEa22.AppleTV']
   },
   {
     id: 'skyshowtime', name: 'SkyShowtime', short: 'SST',
@@ -57,6 +57,6 @@ window.SERVICES = [
     providers: [1773],
     providerMatch: /skyshowtime/i,
     match: /skyshowtime/i,
-    appIds: []
+    appIds: ['skysh0WTIM.SkyShowtime', 'skyshOWTIM.SkyShowtime']
   }
 ];

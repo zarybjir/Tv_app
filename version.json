@@ -1,6 +1,6 @@
 {
-  "version": "1.17.1",
+  "version": "1.18.0",
   "minShell": 1,
-  "notes": "Úprava pro starší televize Samsung (2017, Tizen 3.0): barvy bez CSS proměnných.",
+  "notes": "Správná označení HBO Max, Apple TV a SkyShowtime v televizi; Netflix se spouští jako z nabídky televize.",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }

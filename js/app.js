@@ -866,6 +866,7 @@
     }
     if (!IS_TV) { toast('V televizi by se teď spustila aplikace ' + service.name + '.'); return; }
     var ids = candidateIds(service), i = 0;
+    var mode = launchMode(service);
     toast('Spouštím ' + service.name + '…');
     (function tryNext() {
       if (i >= ids.length) {
@@ -873,9 +874,30 @@
         return;
       }
       var id = ids[i++];
-      try { window.tizen.application.launch(id, function () {}, tryNext); }
-      catch (e) { tryNext(); }
+      try {
+        if (mode === 'plain') window.tizen.application.launch(id, function () {}, tryNext);
+        else window.tizen.application.launchAppControl(launchControl(mode), id, function () {}, tryNext, null);
+      } catch (e) { tryNext(); }
     })();
+  }
+
+  // Způsob spuštění aplikace služby. Starý Netflix na Samsungu při obyčejném spuštění
+  // zůstane černý – chce vědět, odkud ho spouštíme (jako z nabídky televize).
+  var LAUNCH_MODES = ['plain', 'control', 'payload'];
+  var LAUNCH_DEFAULT = { netflix: 'payload' };
+  var LAUNCH_LABEL = { plain: 'způsob 1', control: 'způsob 2', payload: 'způsob 3' };
+  function launchMode(service) {
+    var m = svcSettings(service).launchMode;
+    return LAUNCH_MODES.indexOf(m) >= 0 ? m : (LAUNCH_DEFAULT[service.id] || 'plain');
+  }
+  function launchControl(mode) {
+    var T = window.tizen;
+    var data = [];
+    if (mode === 'payload') {
+      var payload = JSON.stringify({ values: JSON.stringify({ moduleName: 'common', query: 'source_type=12' }) });
+      data = [new T.ApplicationControlData('PAYLOAD', [payload])];
+    }
+    return new T.ApplicationControl('http://tizen.org/appcontrol/operation/default', null, null, null, data);
   }
 
   // ------------------------------------------------------------------ skok rovnou na titul
@@ -1949,10 +1971,18 @@
         class: 'btn focusable', 'data-fid': 'set-test-' + s.id, text: 'Vyzkoušet',
         onselect: function () { launchService(s); }
       });
+      var modeBtn = IS_TV ? h('div', {
+        class: 'btn focusable', 'data-fid': 'set-launch-' + s.id, text: 'Spuštění: ' + LAUNCH_LABEL[launchMode(s)],
+        onselect: function () {
+          st.launchMode = LAUNCH_MODES[(LAUNCH_MODES.indexOf(launchMode(s)) + 1) % LAUNCH_MODES.length];
+          save('settings', settings);
+          modeBtn.textContent = 'Spuštění: ' + LAUNCH_LABEL[launchMode(s)];
+        }
+      }) : null;
       wrap.appendChild(h('div', { class: 'srow' }, [
         h('div', { class: 'sdot', style: 'background:' + s.colors[0] }),
         h('div', { class: 'sname', text: s.name }),
-        toggle, pick, ANDROID ? null : deepBtn, test
+        toggle, pick, modeBtn, ANDROID ? null : deepBtn, test
       ]));
     });
 
