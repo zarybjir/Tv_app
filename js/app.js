@@ -812,7 +812,7 @@
   function errorText(err) {
     if (err && err.message === 'MOTN_LIMIT') return 'Došel měsíční limit dotazů na český dabing (Movie of the Night). Vypni filtr Český dabing, od 1. dne v měsíci zase pojede.';
     if (err && err.message === 'NO_MOTN') return 'Pro filtr Český dabing chybí klíč Movie of the Night.';
-    if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro tipy a hledání vlož v Nastavení → Klíče klíč TMDB.' : 'Pro tipy a hledání doplň TMDB klíč do js/config.js (viz README).';
+    if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro tipy a hledání vlož v Nastavení → Klíče klíč TMDB.' : 'Chybí klíč TMDB. Nejsnáz ho pošleš z mobilní Videotéky: Nastavení → Telefon jako ovladač a naskenuj QR kód.';
     return 'Nepodařilo se načíst data (' + (err && err.message || 'chyba sítě') + ').';
   }
 
@@ -1722,7 +1722,7 @@
     });
     var loading = h('div', { class: 'also', text: 'Zjišťuji dostupnost…' });
     var epBtn = null;
-    if (MOBILE && load('tvCode', '')) {
+    if (MOBILE && validCode(load('tvCode', ''))) {
       actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: '📺 Pošli do TV', onselect: function () { sendToTv(item); } }));
     }
     if (item.type === 'tv' && CFG.tmdbKey) {
@@ -1974,28 +1974,39 @@
 
     if (MOBILE) {
       var tvCode = load('tvCode', '');
-      var codeIn = h('input', { class: 'minput', type: 'text', placeholder: 'Kód z televize, např. K7QM-9XTR-2B', autocomplete: 'off' });
-      codeIn.value = tvCode ? fmtCode(tvCode) : '';
+      var paired = validCode(tvCode);
+      var codeIn = h('input', { class: 'minput', type: 'text', placeholder: 'Kód z televize (20 znaků)', autocomplete: 'off' });
       wrap.appendChild(h('div', { class: 'srow wrap keys' }, [
         h('div', { class: 'sname', text: 'Televize' }),
-        h('label', { class: 'keyrow' }, [h('span', { text: tvCode ? 'Spárováno – v detailu titulu je tlačítko Pošli do TV.' : 'Kód najdeš v televizi v Nastavení → Telefon jako ovladač.' }), codeIn]),
-        h('div', { class: 'btn focusable', 'data-fid': 'set-pair', text: 'Spárovat', onselect: function () {
-          var c = normCode(codeIn.value);
-          if (c.length !== 10) { toast('Kód má 10 znaků, opiš ho z televize.'); return; }
-          save('tvCode', c); toast('Spárováno s televizí'); refreshSettings('set-pair');
-        } }),
-        tvCode ? h('div', { class: 'btn focusable', 'data-fid': 'set-unpair', text: 'Zrušit', onselect: function () { save('tvCode', ''); refreshSettings('set-pair'); } }) : null
+        h('div', { class: 'sinfo', text: paired
+          ? 'Spárováno. V detailu titulu je tlačítko Pošli do TV.'
+          : 'V televizi otevři Nastavení → Telefon jako ovladač a naskenuj QR kód. Telefon pak televizi pošle i klíče.' }),
+        h('div', { class: 'btn focusable', 'data-fid': 'set-scan', text: paired ? 'Spárovat znovu (QR)' : 'Naskenovat QR z televize', onselect: function () { go('scan'); } }),
+        paired ? h('div', { class: 'btn focusable', 'data-fid': 'set-sendkeys', text: 'Poslat klíče do televize', onselect: function () { sendKeysToTv(); } }) : null,
+        paired ? h('div', { class: 'btn focusable', 'data-fid': 'set-unpair', text: 'Zrušit spárování', onselect: function () { save('tvCode', ''); refreshSettings('set-scan'); } }) : null,
+        h('label', { class: 'keyrow' }, [h('span', { text: 'Nebo kód opiš:' }), codeIn]),
+        h('div', { class: 'btn focusable', 'data-fid': 'set-pair', text: 'Spárovat kódem', onselect: function () {
+          if (pairWith(codeIn.value)) refreshSettings('set-scan');
+        } })
       ]));
     } else {
       var pc = load('pairCode', '');
-      wrap.appendChild(h('div', { class: 'srow' }, [
+      var pcOk = validCode(pc);
+      wrap.appendChild(h('div', { class: 'srow pairrow' }, [
         h('div', { class: 'sname', text: 'Telefon jako ovladač' }),
-        pc ? h('div', { class: 'paircode', text: fmtCode(pc) }) : null,
-        h('div', { class: 'btn focusable', 'data-fid': 'set-paircode', text: pc ? 'Nový kód' : 'Zapnout',
-          onselect: function () { stopTvListener(); save('pairCode', newPairCode()); startTvListener(); refreshSettings('set-paircode'); } }),
-        pc ? h('div', { class: 'btn focusable', 'data-fid': 'set-pairoff', text: 'Vypnout',
-          onselect: function () { stopTvListener(); save('pairCode', ''); refreshSettings('set-paircode'); } }) : null,
-        h('div', { class: 'sver', text: pc ? 'V mobilní Videotéce zadej tenhle kód v Nastavení → Televize.' : 'Pak půjde v mobilu poslat titul do televize.' })
+        pcOk ? qrImage(QR_PREFIX + pc) : null,
+        h('div', { class: 'pairtext' }, [
+          pcOk ? h('div', { class: 'paircode', text: fmtCode(pc) }) : null,
+          h('div', { class: 'sver', text: pcOk
+            ? 'V mobilní Videotéce otevři Nastavení → Televize → Naskenovat QR. Telefon pak pošle televizi i klíče.'
+            : 'Spáruj mobil s televizí: půjde z něj posílat tituly a přenést klíče.' }),
+          h('div', null, [
+            h('div', { class: 'btn focusable', 'data-fid': 'set-paircode', text: pcOk ? 'Nový kód' : 'Zapnout',
+              onselect: function () { stopTvListener(); save('pairCode', newPairCode()); startTvListener(); refreshSettings('set-paircode'); } }),
+            pcOk ? h('div', { class: 'btn focusable', 'data-fid': 'set-pairoff', text: 'Vypnout',
+              onselect: function () { stopTvListener(); save('pairCode', ''); refreshSettings('set-paircode'); } }) : null
+          ])
+        ])
       ]));
     }
 
@@ -2016,7 +2027,7 @@
 
     wrap.appendChild(h('div', { class: 'sinfo' }, [
       'Data o tom, co kde běží: ', h('b', { text: 'TMDB / JustWatch' }), ', katalog ', h('b', { text: REGION }),
-      '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : 'chybí (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
+      '. TMDB klíč: ', h('b', { text: CFG.tmdbKey ? 'nastaven' : (MOBILE ? 'chybí (Nastavení → Klíče)' : 'chybí – pošli ho z mobilu (Telefon jako ovladač)') }),
       '. Hodnocení IMDb / Rotten Tomatoes (OMDb): ', h('b', { text: omdbBlocked || (CFG.omdbKey ? 'zapnuto, v paměti ' + Object.keys(ratingCache).length + ' titulů' : 'chybí OMDb klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')') }),
       '. Český dabing (Movie of the Night): ', h('b', { text: CFG.motnKey ? 'zapnuto, tento měsíc ' + motnCount().n + ' z 1000 dotazů' : 'chybí klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
       '. Skok na titul (Watchmode): ', h('b', { text: CFG.watchmodeKey ? 'zapnuto, v paměti ' + Object.keys(linkCache).length + ' odkazů' : 'chybí Watchmode klíč (' + (MOBILE ? 'Nastavení → Klíče' : 'js/config.js') + ')' }),
@@ -2101,48 +2112,209 @@
     return null;
   });
 
-  // ------------------------------------------------------------------ TELEFON JAKO OVLADAČ (ntfy.sh)
-  // Televize poslouchá na náhodném kanálu, telefon na něj pošle titul. Posílá se jen ID a název titulu.
-  var NTFY = 'https://ntfy.sh/videoteka-';
+  // ------------------------------------------------------------------ TELEFON JAKO OVLADAČ (ntfy.sh, šifrované)
+  // Televize ukáže QR kód s náhodným 20znakovým kódem. Z kódu se odvodí kanál na ntfy.sh i klíč
+  // k šifrování; samotný kód se nikam neposílá. Zprávy (titul k otevření, klíče) jsou zašifrované.
+  var NTFY = 'https://ntfy.sh/';
   var CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  function newPairCode() {
-    var a = new Uint8Array(10), out = '';
+  var CODE_LEN = 20;
+  var QR_PREFIX = 'VIDEOTEKA:';
+
+  // SHA-256 v čistém JS (Tizen nemá WebCrypto mimo zabezpečený kontext)
+  var K256 = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  function ror(x, n) { return (x >>> n) | (x << (32 - n)); }
+  function sha256(msg) {
+    var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    var bytes = msg.slice(), bits = msg.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    var hi = Math.floor(bits / 0x100000000), lo = bits >>> 0;
+    bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255, (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+    var w = new Array(64);
+    for (var off = 0; off < bytes.length; off += 64) {
+      var t;
+      for (t = 0; t < 16; t++) w[t] = (bytes[off + 4 * t] << 24) | (bytes[off + 4 * t + 1] << 16) | (bytes[off + 4 * t + 2] << 8) | bytes[off + 4 * t + 3];
+      for (t = 16; t < 64; t++) {
+        var x = w[t - 15], y = w[t - 2];
+        w[t] = (w[t - 16] + (ror(x, 7) ^ ror(x, 18) ^ (x >>> 3)) + w[t - 7] + (ror(y, 17) ^ ror(y, 19) ^ (y >>> 10))) | 0;
+      }
+      var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], hh = H[7];
+      for (t = 0; t < 64; t++) {
+        var t1 = (hh + (ror(e, 6) ^ ror(e, 11) ^ ror(e, 25)) + ((e & f) ^ (~e & g)) + K256[t] + w[t]) | 0;
+        var t2 = ((ror(a, 2) ^ ror(a, 13) ^ ror(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+        hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+      H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + hh) | 0;
+    }
+    var out = [];
+    H.forEach(function (v) { out.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255); });
+    return out;
+  }
+  function utf8(str) { var b = unescape(encodeURIComponent(str)), a = []; for (var i = 0; i < b.length; i++) a.push(b.charCodeAt(i)); return a; }
+  function fromUtf8(arr) { var s = ''; for (var i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]); return decodeURIComponent(escape(s)); }
+  function toHex(arr) { return arr.map(function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
+  function toB64(arr) { var s = ''; for (var i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]); return btoa(s); }
+  function fromB64(str) { var b = atob(str), a = []; for (var i = 0; i < b.length; i++) a.push(b.charCodeAt(i)); return a; }
+  function keystream(code, nonce, n) {
+    var out = [];
+    for (var i = 0; out.length < n; i++) out = out.concat(sha256(utf8('ks|' + code + '|' + nonce + '|' + i)));
+    return out.slice(0, n);
+  }
+  function randomCode(n) {
+    var a = new Uint8Array(n), out = '';
     (window.crypto || window.msCrypto).getRandomValues(a);
     for (var i = 0; i < a.length; i++) out += CODE_ABC[a[i] % CODE_ABC.length];
     return out;
   }
-  function fmtCode(c) { return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8); }
-  function normCode(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  function seal(code, obj) {
+    var nonce = randomCode(12);
+    var pt = utf8(JSON.stringify(obj)), ks = keystream(code, nonce, pt.length);
+    var ct = toB64(pt.map(function (x, i) { return x ^ ks[i]; }));
+    return JSON.stringify({ v: 2, n: nonce, c: ct, t: toHex(sha256(utf8('mac|' + code + '|' + nonce + '|' + ct))).slice(0, 32) });
+  }
+  function unseal(code, str) {
+    var m = JSON.parse(str);
+    if (!m || m.v !== 2 || !m.n || !m.c) return null;
+    if (toHex(sha256(utf8('mac|' + code + '|' + m.n + '|' + m.c))).slice(0, 32) !== m.t) return null; // cizí nebo poškozená zpráva
+    var ct = fromB64(m.c), ks = keystream(code, m.n, ct.length);
+    return JSON.parse(fromUtf8(ct.map(function (x, i) { return x ^ ks[i]; })));
+  }
+  function topicOf(code) { return 'videoteka-' + toHex(sha256(utf8('topic|' + code))).slice(0, 24); }
+  function newPairCode() { return randomCode(CODE_LEN); }
+  function fmtCode(c) { return String(c).match(/.{1,4}/g).join('-'); }
+  function normCode(c) {
+    c = String(c || '').trim();
+    if (c.indexOf(QR_PREFIX) === 0) c = c.slice(QR_PREFIX.length);
+    return c.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
+  function validCode(c) { return c.length === CODE_LEN && c.split('').every(function (ch) { return CODE_ABC.indexOf(ch) >= 0; }); }
 
-  function sendToTv(item) {
+  function postToTv(obj) {
     var code = load('tvCode', '');
-    if (!code) { toast('Nejdřív spáruj televizi v Nastavení.'); return; }
-    var msg = { v: 1, a: 'open', item: { key: item.key, id: item.id, type: item.type, title: item.title, year: item.year,
-      poster: item.poster, backdrop: item.backdrop, overview: item.overview, vote: item.vote } };
-    fetch(NTFY + code, { method: 'POST', body: JSON.stringify(msg) }).then(function (r) {
-      toast(r.ok ? 'Odesláno do televize: ' + item.title : 'Odeslání se nepovedlo (HTTP ' + r.status + ').');
-    }).catch(function () { toast('Odeslání se nepovedlo – zkontroluj internet.'); });
+    if (!validCode(code)) return Promise.reject(new Error('NOT_PAIRED'));
+    return fetch(NTFY + topicOf(code), { method: 'POST', body: seal(code, obj) }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    });
+  }
+  function sendToTv(item) {
+    postToTv({ a: 'open', item: { key: item.key, id: item.id, type: item.type, title: item.title, year: item.year,
+      poster: item.poster, backdrop: item.backdrop, overview: item.overview, vote: item.vote } })
+      .then(function () { toast('Odesláno do televize: ' + item.title); })
+      .catch(function (err) { toast(err.message === 'NOT_PAIRED' ? 'Nejdřív spáruj televizi v Nastavení → Televize.' : 'Odeslání se nepovedlo – zkontroluj internet.'); });
+  }
+  function sendKeysToTv() {
+    var keys = {};
+    KEY_NAMES.forEach(function (n) { if (CFG[n]) keys[n] = CFG[n]; });
+    if (!keys.tmdbKey) { toast('V telefonu zatím nemáš klíč TMDB, není co posílat.'); return Promise.resolve(); }
+    return postToTv({ a: 'keys', keys: keys })
+      .then(function () { toast('Klíče odeslány do televize. Televize se za chvíli sama restartuje.'); })
+      .catch(function () { toast('Klíče se nepodařilo odeslat – zkontroluj internet.'); });
+  }
+  function pairWith(raw) {
+    var c = normCode(raw);
+    if (!validCode(c)) { toast('Kód má 20 znaků, opiš ho přesně z televize (nebo naskenuj QR).'); return false; }
+    save('tvCode', c);
+    sendKeysToTv();
+    toast('Spárováno s televizí');
+    return true;
   }
 
   var tvListener = null;
   function startTvListener() {
     var code = load('pairCode', '');
-    if (!code || MOBILE || tvListener || typeof EventSource === 'undefined') return;
-    tvListener = new EventSource(NTFY + code + '/sse');
+    if (!validCode(code) || MOBILE || tvListener || typeof EventSource === 'undefined') return;
+    tvListener = new EventSource(NTFY + topicOf(code) + '/sse');
     tvListener.onmessage = function (ev) {
-      try {
-        var d = JSON.parse(ev.data);
-        var m = JSON.parse(d.message || '{}');
-        if (m.a === 'open' && m.item && m.item.id) {
-          var it = m.item;
-          it.key = (it.type === 'tv' ? 'tv' : 'movie') + ':' + it.id;
-          toast('Z telefonu: ' + it.title);
-          go('detail', { item: it });
-        }
-      } catch (e) { /* cizí zpráva */ }
+      var m = null;
+      try { m = unseal(code, JSON.parse(ev.data).message || ''); } catch (e) { m = null; }
+      if (!m) return;
+      if (m.a === 'open' && m.item && m.item.id) {
+        var it = m.item;
+        it.key = (it.type === 'tv' ? 'tv' : 'movie') + ':' + it.id;
+        toast('Z telefonu: ' + it.title);
+        go('detail', { item: it });
+      } else if (m.a === 'keys' && m.keys) {
+        var k = load('keys', {}), changed = false;
+        KEY_NAMES.forEach(function (n) { if (m.keys[n] && m.keys[n] !== k[n]) { k[n] = m.keys[n]; changed = true; } });
+        if (!changed) { toast('Klíče z telefonu už televize má.'); return; }
+        save('keys', k);
+        toast('Klíče z telefonu uloženy, restartuji…');
+        setTimeout(function () { location.reload(); }, 1800);
+      }
     };
   }
   function stopTvListener() { if (tvListener) { tvListener.close(); tvListener = null; } }
+
+  function qrImage(text) {
+    if (typeof qrcode === 'undefined') return null;
+    var q = qrcode(0, 'M');
+    q.addData(text);
+    q.make();
+    return h('img', { class: 'pairqr', src: q.createDataURL(MOBILE ? 4 : 7, 2), alt: '' });
+  }
+
+  // ----- skenování QR v telefonu (fotoaparát + jsQR přibalené v aplikaci)
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    return new Promise(function (res, rej) {
+      var sc = document.createElement('script');
+      sc.src = 'js/jsqr.js';
+      sc.onload = function () { window.jsQR ? res() : rej(new Error('jsQR')); };
+      sc.onerror = function () { rej(new Error('jsQR')); };
+      document.body.appendChild(sc);
+    });
+  }
+  defineScreen('scan', function (root) {
+    clear(root);
+    root.appendChild(topbar([h('div', { class: 'eptitle', text: 'Skenování' })]));
+    var video = h('video', { class: 'scanvideo', playsinline: 'true', muted: 'true', autoplay: 'true' });
+    var msg = h('div', { class: 'sinfo scanmsg', text: 'Namiř telefon na QR kód v televizi (Nastavení → Telefon jako ovladač).' });
+    var cancel = h('div', { class: 'btn focusable', 'data-fid': 'scan-cancel', text: 'Zrušit', onselect: function () { back(); } });
+    root.appendChild(h('div', { class: 'scanwrap' }, [video, msg, cancel]));
+    var stream = null, canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+    function stop() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } }
+    function tick() {
+      if (currentScreen !== screens.scan) { stop(); return; }
+      if (video.readyState >= 2 && video.videoWidth) {
+        var w = 480, hgt = Math.round(video.videoHeight * 480 / video.videoWidth);
+        canvas.width = w; canvas.height = hgt;
+        ctx.drawImage(video, 0, 0, w, hgt);
+        var res = window.jsQR(ctx.getImageData(0, 0, w, hgt).data, w, hgt, { inversionAttempts: 'dontInvert' });
+        if (res && res.data && res.data.indexOf(QR_PREFIX) === 0) {
+          stop();
+          if (pairWith(res.data)) { back(); return; }
+        }
+      }
+      setTimeout(tick, 250);
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      msg.textContent = 'Fotoaparát tady není k dispozici – opiš kód z televize ručně.';
+      return cancel;
+    }
+    loadJsQR().then(function () {
+      return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    }).then(function (s) {
+      if (currentScreen !== screens.scan) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      stream = s;
+      video.srcObject = s;
+      var pl = video.play();
+      if (pl && pl.catch) pl.catch(function () {});
+      tick();
+    }).catch(function (err) {
+      msg.textContent = err && err.message === 'jsQR'
+        ? 'Skenování potřebuje novější APK Videotéky. Zatím opiš kód z televize ručně.'
+        : 'Fotoaparát se nepodařilo spustit (' + ((err && err.name) || 'chyba') + '). Povol ho Videotéce, nebo opiš kód ručně.';
+    });
+    return cancel;
+  });
 
   // ------------------------------------------------------------------ KALENDÁŘ
   defineScreen('calendar', function (root) {

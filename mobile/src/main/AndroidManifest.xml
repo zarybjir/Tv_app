@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- jen pro skenování QR kódu z televize -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Videotéka hledá v telefonu aplikace Netflix, HBO Max, Disney+… a otevírá v nich odkazy. -->
     <queries>

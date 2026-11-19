@@ -1,6 +1,6 @@
 {
-  "version": "1.16.1",
+  "version": "1.17.0",
   "minShell": 1,
-  "notes": "Oprava: verze 1.16.0 se na starší instalaci nespustila (černá obrazovka). Teď přináší herce, Kalendář, Brzy odchází a Pošli do TV.",
-  "files": ["css/style.css", "js/services.js", "js/app.js"]
+  "notes": "Párování telefonu s televizí přes QR kód a přenos klíčů z telefonu do televize.",
+  "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }

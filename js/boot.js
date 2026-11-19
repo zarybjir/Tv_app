@@ -8,7 +8,7 @@
   // novější slupku (version.json → minShell), stáhnout nejde a je nutné aplikaci přeinstalovat.
   var SHELL = 1;
   var SOURCE = 'https://raw.githubusercontent.com/zarybjir/Tv_app/main/';
-  var BUNDLED_FILES = ['css/style.css', 'js/services.js', 'js/app.js'];
+  var BUNDLED_FILES = ['css/style.css', 'js/services.js', 'js/qrcode.js', 'js/app.js'];
   var LS = 'promitarna.update.';
 
   function get(k) { try { return localStorage.getItem(LS + k); } catch (e) { return null; } }

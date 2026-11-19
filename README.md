@@ -89,6 +89,18 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 
 ---
 
+## Klíče do televize z mobilu (nejjednodušší)
+
+Klíče stačí mít v mobilní Videotéce (*Nastavení → Klíče*). Do televize je přeneseš takhle:
+1. V televizi otevři *Nastavení → Telefon jako ovladač → Zapnout*. Ukáže se QR kód.
+2. V mobilu otevři *Nastavení → Televize → Naskenovat QR z televize*. Pokud fotoaparát
+   nejde, opiš 20znakový kód pod QR kódem.
+3. Telefon televizi pošle klíče, televize si je uloží a sama se restartuje.
+
+Spárování zároveň zapne tlačítko *Pošli do TV* v mobilu. Zprávy jdou přes veřejnou službu
+ntfy.sh a jsou zašifrované kódem z QR, který se nikam neposílá. `js/config.js` pak v televizi
+může zůstat prázdný.
+
 ## 1. TMDB klíč (zdarma, 5 minut)
 
 1. Zaregistruj se na <https://www.themoviedb.org/signup>.

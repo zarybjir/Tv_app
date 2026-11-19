@@ -1,11 +1,15 @@
 package cz.videoteka.app
 
+import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -22,6 +26,7 @@ import org.json.JSONObject
 class MainActivity : Activity() {
 
     private lateinit var webView: WebView
+    private var pendingCamera: PermissionRequest? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +46,25 @@ class MainActivity : Activity() {
         s.allowFileAccess = false
         s.allowContentAccess = false
         s.textZoom = 100
+        s.mediaPlaybackRequiresUserGesture = false
 
         webView.addJavascriptInterface(Bridge(), "VideotekaAndroid")
+
+        // Fotoaparát jen pro skenování QR kódu z televize (párování)
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest) {
+                runOnUiThread {
+                    if (!request.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                        request.deny()
+                    } else if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+                    } else {
+                        pendingCamera = request
+                        requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_REQUEST)
+                    }
+                }
+            }
+        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
@@ -110,6 +132,18 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != CAMERA_REQUEST) return
+        val req = pendingCamera ?: return
+        pendingCamera = null
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            req.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+        } else {
+            req.deny()
+        }
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         webView.evaluateJavascript("window.videotekaBack ? (window.videotekaBack(), 1) : 0") { res ->
@@ -134,6 +168,7 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        const val CAMERA_REQUEST = 42
         const val HOST = "appassets.androidplatform.net"
         const val START_URL = "https://$HOST/assets/web/index.html"
     }
