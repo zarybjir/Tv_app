@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets"
         id="http://promitarna.local/tv" version="1.0.0" viewmodes="maximized">
-    <tizen:application id="PrMtArNa01.Promitarna" package="PrMtArNa01" required_version="3.0"/>
+    <tizen:application id="PrMtArNa01.Videoteka" package="PrMtArNa01" required_version="3.0"/>
     <tizen:profile name="tv-samsung"/>
     <content src="index.html"/>
     <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
