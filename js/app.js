@@ -25,6 +25,21 @@
     catch (e) { return def; }
   }
   var KEY_NAMES = ['tmdbKey', 'omdbKey', 'watchmodeKey', 'motnKey'];
+  // kde klíče zdarma získat (odkazy v Nastavení → Klíče a v README)
+  var KEY_SOURCES = {
+    tmdbKey: { url: 'https://www.themoviedb.org/settings/api',
+      how: 'Zaregistruj se na themoviedb.org, v Nastavení → API požádej o klíč (Developer, osobní použití) a zkopíruj „API Key".' },
+    omdbKey: { url: 'https://www.omdbapi.com/apikey.aspx',
+      how: 'Vyber FREE (1000 dotazů denně), vyplň e-mail a klíč ti přijde do pošty. V e-mailu ho ještě aktivuj odkazem.' },
+    watchmodeKey: { url: 'https://api.watchmode.com/requestApiKey/',
+      how: 'Zaregistruj se (Free plán), klíč najdeš po přihlášení v sekci API Key.' },
+    motnKey: { url: 'https://developers.movieofthenight.com/',
+      how: 'Zaregistruj se, zvol plán Free a v přehledu zkopíruj API key.' }
+  };
+  function openExternal(url) {
+    if (ANDROID && ANDROID.openUrl && ANDROID.openUrl(url, '')) return;
+    try { window.open(url, '_blank'); } catch (e) { /* nic */ }
+  }
   (function () {
     var k = load('keys', {});
     KEY_NAMES.forEach(function (n) { if (k[n]) CFG[n] = k[n]; });
@@ -1500,7 +1515,7 @@
     body.appendChild(row('Moje služby', MOBILE ? 'klepnutím spustíš aplikaci' : 'OK spustí aplikaci · na plakátu: červené = nezajímá mě, zelené = viděl jsem', tiles));
     if (!CFG.tmdbKey && MOBILE) {
       body.appendChild(h('div', { class: 'banner focusable', 'data-fid': 'need-keys', onselect: function () { go('settings'); } },
-        ['Pro tipy, hledání a kategorie vlož v ', h('b', { text: 'Nastavení → Klíče' }), ' klíč TMDB (zdarma na themoviedb.org). Klepni sem.']));
+        [h('b', { text: 'Vítej ve Videotéce! ' }), 'Ještě chybí klíč TMDB: je zdarma a získáš ho za pár minut. Klepni sem, v Nastavení → Klíče je u každého klíče odkaz a postup.']));
     }
 
     // přibylo na tvých službách – vždy nahoře
@@ -1510,6 +1525,8 @@
 
     var c = content();
     function addRow(title, sub, fidPrefix, opts, serviceIds, tabs) {
+      // bez klíče TMDB v mobilu stačí uvítací karta, prázdné řádky by jen opakovaly totéž
+      if (!CFG.tmdbKey && MOBILE) return;
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
       var subText = function (extra) { return [sub, anyFilter() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
@@ -1954,7 +1971,13 @@
         var inp = h('input', { class: 'minput', type: 'text', placeholder: labels[n], autocomplete: 'off', spellcheck: 'false' });
         inp.value = CFG[n] || '';
         inputs[n] = inp;
-        return h('label', { class: 'keyrow' }, [h('span', { text: labels[n] }), inp]);
+        var src = KEY_SOURCES[n];
+        return h('div', { class: 'keyrow' }, [
+          h('div', { class: 'keyhead' }, [h('span', { text: labels[n] }),
+            h('span', { class: 'keylink focusable', 'data-fid': 'set-keylink-' + n, text: CFG[n] ? 'web ›' : 'Získat klíč ›',
+              onselect: function () { openExternal(src.url); } })]),
+          CFG[n] ? null : h('div', { class: 'keyhow', text: src.how }),
+          inp]);
       }));
       keyBox.appendChild(h('div', { class: 'btn focusable', 'data-fid': 'set-keys-save', text: 'Uložit klíče',
         onselect: function () {
@@ -1965,7 +1988,7 @@
           setTimeout(function () { location.reload(); }, 600);
         } }));
       wrap.appendChild(keyBox);
-      wrap.appendChild(h('div', { class: 'sinfo', text: 'Klíče jsou zdarma: themoviedb.org (Nastavení → API), omdbapi.com a api.watchmode.com. Zůstávají jen v telefonu.' }));
+      wrap.appendChild(h('div', { class: 'sinfo', text: 'Všechny klíče jsou zdarma a stačí jen TMDB, ostatní přidávají funkce navíc. Klíče zůstávají jen v tomhle telefonu, do televize je pošleš přes Nastavení → Televize.' }));
     }
 
     // obsah domovské obrazovky

@@ -1,9 +1,68 @@
-# Videotéka — jedna obrazovka pro všechny streamovací služby
+# Videotéka
 
-Pro **televize Samsung** a **telefony s Androidem** (viz [Mobilní aplikace](#mobilní-aplikace-android)).
+**Všechny streamovací služby na jedné obrazovce.** Netflix, HBO Max, Disney+, Prime Video,
+Apple TV a SkyShowtime dohromady, rozdělené podle žánrů, s hodnocením IMDb a Rotten Tomatoes.
+Hned uvidíš, co na kterých tvých službách běží, a jedním klepnutím to pustíš.
 
-Aplikace pro televize **Samsung (Tizen, modely od roku 2018)**. Spojuje Netflix, HBO Max,
-Disney+, Prime Video, Apple TV a SkyShowtime:
+Pro **telefony s Androidem** a **televize Samsung**. Zdarma, bez reklam a bez účtu.
+
+<p align="center">
+  <img src="docs/tv-domu.jpg" width="100%" alt="Videotéka v televizi: služby a řádky s novinkami">
+</p>
+<p align="center">
+  <img src="docs/mobil-domu.jpg" width="31%" alt="Domovská obrazovka v telefonu">
+  <img src="docs/mobil-detail.jpg" width="31%" alt="Detail titulu s hodnocením a tlačítkem pro přehrání">
+  <img src="docs/mobil-klice.jpg" width="31%" alt="Nastavení klíčů s odkazy, kde je získat">
+</p>
+
+<sub>Snímky jsou z ukázkových dat, názvy filmů jsou vymyšlené.</sub>
+
+## Co umí
+
+- 🎬 **Jeden katalog místo šesti aplikací.** Kategorie jako Krimi, Sci-fi, Komedie nebo Dokumenty
+  ukazují jen to, co máš ve svých předplatných.
+- ⭐ **Hodnocení IMDb a Rotten Tomatoes** přímo na plakátech a filtr podle nich, třeba jen IMDb 7+.
+- 🇨🇿 **Česká tvorba a český dabing:** jedním tlačítkem jen české tituly nebo jen tituly s českým zvukem.
+- ▶️ **Přehrát rovnou:** v telefonu otevře film přímo v aplikaci Netflixu, HBO Max a dalších.
+- 📅 **Novinky a kalendář:** co přibylo, co brzy odchází a kdy vyjde další díl tvého seriálu.
+- ✅ **Chci vidět a Už jsem viděl:** vlastní seznam napříč službami. Co tě nezajímá, schováš.
+- 📺 **Telefon jako ovladač:** spáruješ mobil s televizí přes QR kód a titul do ní pošleš z telefonu.
+- 🔄 **Aktualizuje se sama.**
+
+## Instalace do telefonu (Android)
+
+1. **[⬇️ Stáhnout Videoteka.apk](https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk)**
+2. Otevři stažený soubor. Telefon se zeptá, jestli povolit instalaci z tohoto zdroje: povol.
+3. Ve Videotéce otevři **Nastavení → Klíče** a vlož klíče (viz níž). U každého je odkaz
+   *Získat klíč ›* a krátký postup.
+
+## Klíče (zdarma, pár minut)
+
+Videotéka si data bere z veřejných filmových databází. Každá z nich chce vlastní bezplatný klíč,
+proto si je každý zařídí sám. Nutný je jen první, ostatní přidávají funkce navíc.
+
+| Klíč | Na co je | Kde ho získat |
+|---|---|---|
+| **TMDB** (nutný) | tituly, plakáty, kategorie, hledání | [themoviedb.org → Nastavení → API](https://www.themoviedb.org/settings/api) — nejdřív [registrace](https://www.themoviedb.org/signup), pak požádat o klíč (Developer, osobní použití) a zkopírovat *API Key* |
+| **OMDb** | hodnocení IMDb a Rotten Tomatoes | [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx) — zvolit FREE, klíč přijde e-mailem a je potřeba ho aktivovat odkazem v e-mailu |
+| **Watchmode** | přehrání rovnou konkrétního titulu | [api.watchmode.com](https://api.watchmode.com/requestApiKey/) — registrace (Free), klíč je v sekci API Key |
+| **Movie of the Night** | český dabing, co přibylo a co odchází | [developers.movieofthenight.com](https://developers.movieofthenight.com/) — registrace, plán Free, zkopírovat API key |
+
+Klíče zůstávají jen v tvém telefonu (nebo televizi) a nikam jinam se neposílají.
+
+## Do televize Samsung
+
+Na televizi se Videotéka instaluje přes vývojářský režim. Nastavuje se to jednou a postup je
+[níž v návodu](#2-instalace-do-televize). Klíče do televize nemusíš opisovat: pošleš je
+z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší)).
+
+> **Jedna věc, kterou neumí:** na televizi Samsung se služba otevře na úvodní stránce
+> a Videotéka ti napíše, co v ní vyhledat. Skok rovnou na film televize nedovolí. V telefonu
+> skok funguje.
+
+---
+
+## Všechny funkce podrobně
 
 - **Moje služby:** dlaždice, které jedním stiskem OK spustí aplikaci služby.
 - **Kategorie:** domovská obrazovka je rozdělená do řádků podle žánrů (Krimi, Thrillery
@@ -261,10 +320,10 @@ Stejná Videotéka, jen pro telefon: ovládá se dotykem a hledá se klávesnic�
 než v televizi, ale potřebuje Watchmode klíč.
 
 **Instalace:**
-1. Na GitHubu otevři *Actions → Mobilní aplikace (APK)*, poslední úspěšný běh a dole
-   v *Artifacts* stáhni **videoteka-apk**.
-2. V ZIPu je `Videoteka.apk`. Pošli si ho do telefonu a otevři. Telefon se zeptá, jestli
-   povolit instalaci z neznámých zdrojů – povol.
+1. V telefonu stáhni **[Videoteka.apk](https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk)**
+   (nejnovější vydání). Pro vývojáře: sestavení z každého commitu je i v *Actions →
+   Mobilní aplikace (APK) → Artifacts*.
+2. Otevři ho. Telefon se zeptá, jestli povolit instalaci z neznámých zdrojů – povol.
 3. Ve Videotéce otevři *Nastavení → Klíče* a vlož klíče TMDB, OMDb a Watchmode. Zůstávají
    jen v telefonu.
 

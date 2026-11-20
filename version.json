@@ -1,6 +1,11 @@
 {
-  "version": "1.23.0",
+  "version": "1.24.0",
   "minShell": 1,
-  "notes": "Tituly, které na tvých službách neběží, se v řádcích už neukazují; místo korejských a jiných nečitelných názvů anglický název.",
-  "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
+  "notes": "V Nastavení → Klíče je u každého klíče odkaz, kde ho zdarma získat, a krátký postup.",
+  "files": [
+    "css/style.css",
+    "js/services.js",
+    "js/qrcode.js",
+    "js/app.js"
+  ]
 }

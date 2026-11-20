@@ -418,7 +418,10 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .srow .sver { font-size: 13px; max-width: none; width: 100%; }
 .mobile .sinfo { font-size: 13px; line-height: 19px; margin: 6px 0 12px; }
 .mobile .keys .keyrow { display: block; width: 100%; margin-bottom: 10px; }
-.mobile .keys .keyrow span { display: block; font-size: 13px; color: #9aa3b5; margin-bottom: 4px; }
+.mobile .keys .keyhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.mobile .keys .keyhead span { font-size: 13px; color: #9aa3b5; }
+.mobile .keys .keyhead .keylink { font-size: 13px; font-weight: 700; color: #ffcc4d !important; background: none !important; text-decoration: none; padding: 4px 0 4px 12px; }
+.mobile .keys .keyhow { font-size: 12px; line-height: 17px; color: #7d8699; margin-bottom: 6px; }
 .mobile .keys .minput { font-size: 14px; padding: 10px 12px; background: #0b0d12; }
 
 /* seznamy (výběr aplikace, pořadí, skryté) */
