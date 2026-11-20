@@ -8,7 +8,7 @@
 #   VIDEOTEKA_KEY_ALIAS
 #   VIDEOTEKA_KEY_PASSWORD
 #
-# Tag "v1.0.0" navíc vytvoří GitHub Release s APK – z toho umí aktualizovat Obtainium.
+# Každá verze na main (version.json) vytvoří GitHub Release s APK – odkaz ke stažení v README.
 name: Mobilní aplikace (APK)
 
 on:
@@ -68,8 +68,19 @@ jobs:
           name: videoteka-apk
           path: out/Videoteka.apk
 
+      # Vydání pro stažení: odkaz releases/latest/download/Videoteka.apk vede vždy na nejnovější.
+      # Vzniká z main pro každou verzi z version.json (a z tagu v*), jen s podpisovým klíčem.
+      - name: Verze
+        id: ver
+        run: echo "v=$(node -p "require('./version.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.KS_B64 != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.v) }}
+          target_commitish: ${{ github.sha }}
+          name: Videotéka ${{ steps.ver.outputs.v }}
+          body: "Stáhni **Videoteka.apk** níž, otevři ho v telefonu a povol instalaci. Návod a odkazy na klíče jsou v README."
+          make_latest: true
           files: out/Videoteka.apk
