@@ -856,7 +856,7 @@
     return (service.android || []).filter(function (p) { return installedApps.some(function (a) { return a.id === p; }); })[0] || null;
   }
 
-  function launchService(service) {
+  function launchService(service, hint) {
     if (ANDROID) {
       var pkg = androidPackage(service);
       if (pkg && ANDROID.launch(pkg)) return;
@@ -867,9 +867,9 @@
     if (!IS_TV) { toast('V televizi by se teď spustila aplikace ' + service.name + '.'); return; }
     var ids = candidateIds(service), i = 0, errs = [];
     var mode = launchMode(service);
-    toast('Spouštím ' + service.name + '…');
+    toast(hint || 'Spouštím ' + service.name + '…');
     function fail(id, e) { errs.push(id + ': ' + ((e && (e.name || e.message)) || 'chyba')); tryNext(); }
-    function ok() { toast(service.name + ': televize hlásí spuštěno (' + ids[i - 1] + ')'); afterLaunch(); }
+    function ok() { if (hint) toast(hint); afterLaunch(); }
     function tryNext() {
       if (i >= ids.length) {
         toast('Aplikaci ' + service.name + ' se nepodařilo spustit – ' + errs.join(', '));
@@ -939,6 +939,7 @@
     // u Netflixu přešly nové formáty – starší uložená volba z jiného seznamu se nepoužije
     if (st.deep && st.deep !== 'auto' && (st.deep === 'off' || list.indexOf(st.deep) >= 0)) return st.deep;
     if (st.deepOk && list.indexOf(st.deepOk) >= 0) return st.deepOk;
+    if (IS_TV) return 'off'; // starší televize Samsung odkazy na titul nepřijímají – zapíná se ručně v Nastavení
     return DEEP_DEFAULT[service.id] || list[0];
   }
 
@@ -1019,11 +1020,12 @@
   }
 
   function playTitle(service, item) {
-    if ((!ANDROID && deepMethod(service) === 'off') || !CFG.watchmodeKey || !CFG.tmdbKey) { launchService(service); return; }
+    var hint = 'V ' + service.name + ' vyhledej: ' + item.title;
+    if ((!ANDROID && deepMethod(service) === 'off') || !CFG.watchmodeKey || !CFG.tmdbKey) { launchService(service, hint); return; }
     toast('Otevírám „' + item.title + '" v ' + service.name + '…');
     titleLinks(item).then(function (links) {
       var url = pickLink(links, service);
-      if (!url) { toast('Přímý odkaz na titul v ' + service.name + ' nemám, otevírám aplikaci.'); launchService(service); return; }
+      if (!url) { launchService(service, hint); return; }
       if (ANDROID) {
         if (!ANDROID.openUrl(url, androidPackage(service) || '')) launchService(service);
         return;
@@ -1031,8 +1033,7 @@
       if (!IS_TV) { toast('V televizi bych otevřel ' + service.name + ' rovnou na ' + url); return; }
       deepLaunch(service, url, item);
     }).catch(function (err) {
-      toast('Odkaz se nepodařilo zjistit (' + err.message + '), otevírám aplikaci.');
-      launchService(service);
+      launchService(service, hint);
     });
   }
 
@@ -1907,7 +1908,7 @@
   }
   function deepLabel(s) {
     var st = svcSettings(s), m = st.deep || 'auto';
-    if (m === 'auto') return st.deepOk ? 'funguje (' + DEEP_LABEL[st.deepOk] + ')' : 'automaticky';
+    if (m === 'auto') return st.deepOk ? 'funguje (' + DEEP_LABEL[st.deepOk] + ')' : (IS_TV ? 'vypnuto' : 'automaticky');
     return DEEP_LABEL[m];
   }
   defineScreen('settings', function (root) {

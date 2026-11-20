@@ -1,6 +1,6 @@
 {
-  "version": "1.22.0",
+  "version": "1.22.1",
   "minShell": 1,
-  "notes": "HBO Max: nový způsob spuštění (Videotéka se před spuštěním schová).",
+  "notes": "V televizi se služba otevře a Videotéka napíše, jaký titul v ní vyhledat.",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }
