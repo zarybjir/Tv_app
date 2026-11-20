@@ -231,9 +231,10 @@ Ověřeno na Samsung UE55MU6272 (2017, Tizen 3.0):
 
 1. Použij **Tizen Studio 6.1** (z `download.tizen.org/sdk/Installer/tizen-studio_6.1/`, soubor
    `web-ide…windows-64.exe`). Nové rozšíření pro VS Code tuhle televizi nezvládlo.
-2. V Device Manageru klikni na televizi pravým tlačítkem → **Permit to install applications**.
-   Pokud to nepomůže, vytvoř v Certificate Manageru profil typu **Tizen** (ne Samsung)
-   s výchozím distributorem (Public).
+2. V Certificate Manageru vytvoř certifikát **Samsung → TV** (televize musí být připojená,
+   aby se doplnilo její DUID). Pak v Device Manageru klikni na televizi pravým tlačítkem →
+   **Permit to install applications**. **Tohle byl rozhodující krok** – bez něj televize každý
+   balíček odmítla s `install failed[118]`, ať byl podepsaný jakkoli.
 3. Ze složky projektu smaž `js/jsqr.js` a `js/jsqr.LICENSE.txt` (televize je nepotřebuje),
    pak **Build Signed Package**.
 4. Instaluj z příkazové řádky (`C:\tizen-studio\tools`), každý řádek zvlášť:
