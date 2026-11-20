@@ -837,14 +837,17 @@
   }
 
   function detectedApp(service) {
-    return installedApps.filter(function (a) { return service.match.test(a.name); })[0] || null;
+    // přednost má aplikace se stejným názvem jako služba (HBO Max místo staré HBO GO)
+    var same = installedApps.filter(function (a) { return a.name.toLowerCase() === service.name.toLowerCase(); })[0];
+    return same || installedApps.filter(function (a) { return service.match.test(a.name); })[0] || null;
   }
 
   function candidateIds(service) {
     var ids = [], st = svcSettings(service), d = detectedApp(service);
     if (st.appId) ids.push(st.appId);
-    if (d) ids.push(d.id);
+    // ověřená označení mají přednost před hledáním podle názvu
     service.appIds.forEach(function (id) { ids.push(id); });
+    if (d) ids.push(d.id);
     return ids.filter(function (id, i) { return ids.indexOf(id) === i; });
   }
 

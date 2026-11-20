@@ -18,7 +18,7 @@ window.SERVICES = [
     watchmode: /hbo|^max$/i, name: 'HBO Max', short: 'HBO',
     colors: ['#7b2ff7', '#1a0840'],
     providers: [1899, 384],
-    match: /hbo|^max$/i,
+    match: /hbo\s*max|^max$/i,
     appIds: ['5b8c3eb16b.BeamCTVDev']
   },
   {

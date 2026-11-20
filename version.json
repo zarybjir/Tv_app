@@ -1,6 +1,6 @@
 {
-  "version": "1.22.1",
+  "version": "1.22.2",
   "minShell": 1,
-  "notes": "V televizi se služba otevře a Videotéka napíše, jaký titul v ní vyhledat.",
+  "notes": "Oprava: HBO Max se spouštělo jako stará aplikace HBO GO.",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }
