@@ -1092,6 +1092,22 @@
   // ------------------------------------------------------------------ komponenty
   var fidCounter = 0;
 
+  function dropIfUnavailable(cardEl, pr) {
+    if (pr.mine.length || !cardEl.parentNode) return;
+    if (cardEl === focused) { cardEl.classList.add('away'); return; }
+    cardEl.parentNode.removeChild(cardEl);
+  }
+
+  // titul bez českého překladu má v TMDB třeba korejský název – zkus anglický
+  var NON_LATIN = /[\u0400-\u04FF\u0590-\u06FF\u0E00-\u0E7F\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
+  function fixTitle(item, cb) {
+    if (!item.title || !NON_LATIN.test(item.title) || !CFG.tmdbKey) return;
+    tmdb('/' + item.type + '/' + item.id, { language: 'en-US' }).then(function (d) {
+      var t = d.title || d.name || '';
+      if (t && !NON_LATIN.test(t)) { item.title = t; if (!item.overview && d.overview) item.overview = d.overview; cb(t); }
+    }).catch(function () {});
+  }
+
   function card(item, fid, serviceIds) {
     var poster = h('div', { class: 'poster' }, [
       item.poster
@@ -1111,6 +1127,11 @@
       onselect: function () { go('detail', { item: item }); }
     }, [poster, badges, h('div', { class: 'ctitle', text: item.title + (item.year ? ' (' + item.year + ')' : '') })]);
     el._item = item;
+    fixTitle(item, function (t) {
+      var ct = el.querySelector('.ctitle'), ph = el.querySelector('.ph');
+      if (ct) ct.textContent = t + (item.year ? ' (' + item.year + ')' : '');
+      if (ph) ph.textContent = t;
+    });
     if (hasCzDub(item.key)) poster.appendChild(h('div', { class: 'dubtag', text: 'CZ' }));
     var lv = leavingTs(item.key);
     if (lv) poster.appendChild(h('div', { class: 'leavetag', text: 'odchází ' + fmtTs(lv) }));
@@ -1519,7 +1540,7 @@
             var done = false;
             var badge = function () {
               if (done) return; done = true;
-              providersFor(it).then(function (pr) { setBadges(cardEl, pr.mine); }).catch(function () {});
+              providersFor(it).then(function (pr) { setBadges(cardEl, pr.mine); dropIfUnavailable(cardEl, pr); }).catch(function () {});
             };
             if (idx < 8) badge(); else cardEl._focus = badge;
           }
@@ -1708,6 +1729,9 @@
         if (s && svcSettings(s).enabled) { if (mine.indexOf(s) < 0) mine.push(s); }
         else if (others.indexOf(p.provider_name) < 0) others.push(p.provider_name);
       });
+      // Movie of the Night bývá u novinek rychlejší než TMDB – sluč oba zdroje
+      var dc = (!region || region === REGION) ? dubCache[item.key] : null;
+      if (dc && dc.by) enabledServices().forEach(function (sv) { if (dc.by[sv.id] && mine.indexOf(sv) < 0) mine.push(sv); });
       var rent = [].concat(reg.rent || [], reg.buy || []).map(function (p) { return p.provider_name; })
         .filter(function (n, i, a) { return a.indexOf(n) === i; });
       return { mine: mine, others: others, rent: rent };
@@ -1758,8 +1782,10 @@
         if (cast.length) peopleEl.appendChild(h('div', { class: 'prow' }, [h('span', { class: 'plabel', text: 'Hrají' })].concat(cast.map(pchip))));
       }).catch(function () {});
     }
+    var titleEl = h('h1', { text: item.title });
+    fixTitle(item, function (t) { titleEl.textContent = t; var ov = info.querySelector('.overview'); if (ov && !ov.textContent) ov.textContent = item.overview || ''; });
     var info = h('div', { class: 'detail-info' }, [
-      h('h1', { text: item.title }),
+      titleEl,
       metaEl,
       ratingsEl,
       h('div', { class: 'overview', text: item.overview || '' }),
@@ -2173,7 +2199,7 @@
           var c = card(it, 'g-' + it.key, params.serviceIds);
           var idx = count++;
           c._focus = function () { if (idx >= count - 14) loadMore(); };
-          if (!params.serviceIds) providersFor(it).then(function (pr) { setBadges(c, pr.mine); }).catch(function () {});
+          if (!params.serviceIds) providersFor(it).then(function (pr) { setBadges(c, pr.mine); dropIfUnavailable(c, pr); }).catch(function () {});
           grid.appendChild(c);
         });
         if (first && grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
