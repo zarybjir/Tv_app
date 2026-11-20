@@ -1,10 +1,12 @@
 # Videotéka
 
-**Všechny streamovací služby na jedné obrazovce.** Netflix, HBO Max, Disney+, Prime Video,
-Apple TV a SkyShowtime dohromady, rozdělené podle žánrů, s hodnocením IMDb a Rotten Tomatoes.
-Hned uvidíš, co na kterých tvých službách běží, a jedním klepnutím to pustíš.
+**Přehled všech streamovacích služeb na jedné obrazovce.** Videotéka spojuje nabídku služeb
+Netflix, HBO Max, Disney+, Prime Video, Apple TV a SkyShowtime, třídí ji podle žánrů a ke každému
+titulu zobrazuje hodnocení IMDb a Rotten Tomatoes. U každého titulu je uvedeno, na které
+z předplacených služeb je k dispozici, a jedním výběrem se otevře v aplikaci dané služby.
 
-Pro **telefony s Androidem** a **televize Samsung**. Zdarma, bez reklam a bez účtu.
+Aplikace je určena pro **telefony s Androidem** a **televize Samsung**. Je zdarma, bez reklam
+a nevyžaduje registraci.
 
 <p align="center">
   <img src="docs/tv-domu.jpg" width="100%" alt="Videotéka v televizi: služby a řádky s novinkami">
@@ -12,53 +14,55 @@ Pro **telefony s Androidem** a **televize Samsung**. Zdarma, bez reklam a bez ú
 <p align="center">
   <img src="docs/mobil-domu.jpg" width="31%" alt="Domovská obrazovka v telefonu">
   <img src="docs/mobil-detail.jpg" width="31%" alt="Detail titulu s hodnocením a tlačítkem pro přehrání">
-  <img src="docs/mobil-klice.jpg" width="31%" alt="Nastavení klíčů s odkazy, kde je získat">
+  <img src="docs/mobil-klice.jpg" width="31%" alt="Nastavení klíčů s odkazy na jejich získání">
 </p>
 
-<sub>Snímky jsou z ukázkových dat, názvy filmů jsou vymyšlené.</sub>
+<sub>Snímky obrazovky pocházejí z ukázkových dat, názvy titulů jsou smyšlené.</sub>
 
-## Co umí
+## Hlavní funkce
 
-- 🎬 **Jeden katalog místo šesti aplikací.** Kategorie jako Krimi, Sci-fi, Komedie nebo Dokumenty
-  ukazují jen to, co máš ve svých předplatných.
-- ⭐ **Hodnocení IMDb a Rotten Tomatoes** přímo na plakátech a filtr podle nich, třeba jen IMDb 7+.
-- 🇨🇿 **Česká tvorba a český dabing:** jedním tlačítkem jen české tituly nebo jen tituly s českým zvukem.
-- ▶️ **Přehrát rovnou:** v telefonu otevře film přímo v aplikaci Netflixu, HBO Max a dalších.
-- 📅 **Novinky a kalendář:** co přibylo, co brzy odchází a kdy vyjde další díl tvého seriálu.
-- ✅ **Chci vidět a Už jsem viděl:** vlastní seznam napříč službami. Co tě nezajímá, schováš.
-- 📺 **Telefon jako ovladač:** spáruješ mobil s televizí přes QR kód a titul do ní pošleš z telefonu.
-- 🔄 **Aktualizuje se sama.**
+- **Jednotný katalog.** Kategorie jako Krimi, Sci-fi, Komedie nebo Dokumenty obsahují pouze tituly
+  dostupné v předplacených službách.
+- **Hodnocení IMDb a Rotten Tomatoes** přímo na plakátech, včetně filtru podle hodnocení
+  (například pouze IMDb 7 a více).
+- **Česká tvorba a český dabing.** Jedním tlačítkem lze zobrazit pouze české tituly nebo pouze
+  tituly s českým zvukem.
+- **Přímé přehrání.** V telefonu se titul otevře přímo v aplikaci příslušné služby.
+- **Novinky a kalendář.** Přehled nově přidaných titulů, titulů, které brzy ze služby odejdou,
+  a termínů nových dílů sledovaných seriálů.
+- **Seznamy Chci vidět a Viděno.** Vlastní seznam napříč službami; nezajímavé tituly lze skrýt.
+- **Telefon jako ovladač.** Po spárování telefonu s televizí pomocí QR kódu lze tituly posílat
+  z telefonu do televize.
+- **Automatické aktualizace.**
 
 ## Instalace do telefonu (Android)
 
-1. **[⬇️ Stáhnout Videoteka.apk](https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk)**
-2. Otevři stažený soubor. Telefon se zeptá, jestli povolit instalaci z tohoto zdroje: povol.
-3. Ve Videotéce otevři **Nastavení → Klíče** a vlož klíče (viz níž). U každého je odkaz
-   *Získat klíč ›* a krátký postup.
+1. **[Stáhnout Videoteka.apk](https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk)**
+2. Otevřete stažený soubor a povolte instalaci z tohoto zdroje.
+3. Ve Videotéce otevřete **Nastavení → Klíče** a vložte klíče (viz níže). U každého klíče je
+   odkaz **Získat klíč** a stručný postup.
 
-## Klíče (zdarma, pár minut)
+## Klíče
 
-Videotéka si data bere z veřejných filmových databází. Každá z nich chce vlastní bezplatný klíč,
-proto si je každý zařídí sám. Nutný je jen první, ostatní přidávají funkce navíc.
+Videotéka čerpá data z veřejných filmových databází. Každá z nich vyžaduje vlastní bezplatný
+klíč, který si každý uživatel zřizuje sám. Povinný je pouze klíč TMDB, ostatní zpřístupňují
+další funkce.
 
-| Klíč | Na co je | Kde ho získat |
+| Klíč | Účel | Kde jej získat |
 |---|---|---|
-| **TMDB** (nutný) | tituly, plakáty, kategorie, hledání | [themoviedb.org → Nastavení → API](https://www.themoviedb.org/settings/api) — nejdřív [registrace](https://www.themoviedb.org/signup), pak požádat o klíč (Developer, osobní použití) a zkopírovat *API Key* |
-| **OMDb** | hodnocení IMDb a Rotten Tomatoes | [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx) — zvolit FREE, klíč přijde e-mailem a je potřeba ho aktivovat odkazem v e-mailu |
-| **Watchmode** | přehrání rovnou konkrétního titulu | [api.watchmode.com](https://api.watchmode.com/requestApiKey/) — registrace (Free), klíč je v sekci API Key |
-| **Movie of the Night** | český dabing, co přibylo a co odchází | [developers.movieofthenight.com](https://developers.movieofthenight.com/) — registrace, plán Free, zkopírovat API key |
+| **TMDB** (povinný) | tituly, plakáty, kategorie, vyhledávání | [themoviedb.org → Nastavení → API](https://www.themoviedb.org/settings/api): po [registraci](https://www.themoviedb.org/signup) požádat o klíč (Developer, osobní použití) a zkopírovat *API Key* |
+| **OMDb** | hodnocení IMDb a Rotten Tomatoes | [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx): zvolit FREE; klíč přijde e-mailem a je nutné jej aktivovat odkazem v e-mailu |
+| **Watchmode** | otevření konkrétního titulu v aplikaci služby | [api.watchmode.com](https://api.watchmode.com/requestApiKey/): registrace (Free), klíč je uveden v sekci API Key |
+| **Movie of the Night** | český dabing, nově přidané a odcházející tituly | [developers.movieofthenight.com](https://developers.movieofthenight.com/): registrace, plán Free, zkopírovat API key |
 
-Klíče zůstávají jen v tvém telefonu (nebo televizi) a nikam jinam se neposílají.
+Klíče se ukládají pouze v telefonu, případně v televizi, a nikam dalšímu se neodesílají.
 
-## Do televize Samsung
+## Instalace do televize Samsung
 
-Na televizi se Videotéka instaluje přes vývojářský režim. Nastavuje se to jednou a postup je
-[níž v návodu](#2-instalace-do-televize). Klíče do televize nemusíš opisovat: pošleš je
-z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší)).
-
-> **Jedna věc, kterou neumí:** na televizi Samsung se služba otevře na úvodní stránce
-> a Videotéka ti napíše, co v ní vyhledat. Skok rovnou na film televize nedovolí. V telefonu
-> skok funguje.
+Do televize se Videotéka instaluje prostřednictvím vývojářského režimu. Nastavení je
+jednorázové a postup je popsán [níže](#2-instalace-do-televize). Klíče není nutné do televize
+přepisovat: přenesou se z telefonu pomocí QR kódu
+([postup](#klíče-do-televize-z-mobilu-nejjednodušší)).
 
 ---
 
@@ -74,7 +78,7 @@ z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší))
 - **Dokumenty po podkategoriích:** příroda a zvířata, skutečné zločiny, historie, válka,
   věda a vesmír, sport a hudba. Zapínají se v *Nastavení → Obsah → Dokumenty* a v rozbalené
   kategorii Dokumenty mezi nimi přepínáš záložkami.
-- **Co chceš vidět:** v *Nastavení → Obsah domovské obrazovky* zapneš nebo vypneš:
+- **Co chceš vidět:** v *Nastavení → Obsah* zapneš nebo vypneš:
   - **seriály a filmy**,
   - **jednotlivé kategorie** (16 žánrů),
   - řádek **Nejpopulárnější**,
@@ -85,7 +89,7 @@ z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší))
   - **zelené** = *Už jsem viděl*,
   - **žluté** = vrátit poslední skrytí.
   
-  Totéž je i v detailu titulu. Skryté tituly najdeš a vrátíš v *Nastavení → Skryté*.
+  Totéž je i v detailu titulu. Skryté tituly najdeš a vrátíš v *Nastavení → Aplikace → Skryté a viděné tituly*.
 - **Série a díly:** u seriálu otevři *Série a díly*. Uvidíš série a u každého dílu název,
   datum, délku, popis a obrázek. Výběrem dílu se seriál otevře ve službě a Videotéka si
   zapamatuje, kde jsi skončil: viděné díly mají ✓ a další na řadě je zvýrazněný. Na konkrétní
@@ -98,7 +102,7 @@ z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší))
   dej na seriálu znovu zelené tlačítko.
 - **Přibylo na tvých službách:** když se titul ze seznamu objeví na některé z tvých služeb,
   ukáže se nahoře na domovské obrazovce. Kontroluje se při spuštění, nejvýš dvakrát denně.
-- **Pořadí řádků:** v *Nastavení → Obsah → Pořadí řádků* si posuneš oblíbené kategorie
+- **Pořadí řádků:** v *Nastavení → Obsah → Změnit pořadí řádků* si posuneš oblíbené kategorie
   nahoru.
 - **Plakáty:** skutečné plakáty filmů a seriálů z TMDB.
 - **Hodnocení IMDb a Rotten Tomatoes** u každého plakátu, v detailu navíc počet hlasů
@@ -121,7 +125,7 @@ z telefonu přes QR kód ([jak](#klíče-do-televize-z-mobilu-nejjednodušší))
   ukazuje, co službám opravdu přibylo do katalogu, a řádek *Brzy odchází* to, co mizí,
   s datem. Tituly ze seznamu *Chci vidět*, které odcházejí, mají štítek „odchází 20. 11."
   a upozornění nahoře na hlavní stránce.
-- **Pošli do TV:** v televizi zapni *Nastavení → Telefon jako ovladač* a kód zadej v mobilu
+- **Pošli do TV:** v televizi zapni *Nastavení → Telefon* a kód zadej v mobilu
   v *Nastavení → Televize*. V detailu titulu v mobilu pak tlačítko *Pošli do TV* otevře titul
   v televizi. Zpráva jde přes veřejnou službu ntfy.sh na náhodný kanál a obsahuje jen název
   a ID titulu.
@@ -151,8 +155,8 @@ Netflix, HBO a další nemají veřejné rozhraní. Proto aplikace:
 ## Klíče do televize z mobilu (nejjednodušší)
 
 Klíče stačí mít v mobilní Videotéce (*Nastavení → Klíče*). Do televize je přeneseš takhle:
-1. V televizi otevři *Nastavení → Telefon jako ovladač → Zapnout*. Ukáže se QR kód.
-2. V mobilu otevři *Nastavení → Televize → Naskenovat QR z televize*. Pokud fotoaparát
+1. V televizi otevři *Nastavení → Telefon → Zapnout*. Ukáže se QR kód.
+2. V mobilu otevři *Nastavení → Televize → Naskenovat QR kód*. Pokud fotoaparát
    nejde, opiš 20znakový kód pod QR kódem.
 3. Telefon televizi pošle klíče, televize si je uloží a sama se restartuje.
 
