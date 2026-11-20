@@ -33,7 +33,7 @@
   if (pkg && get('pending') === pkg.version) {
     set('bad', pkg.version);
     set('pkg', null);
-    notice = 'Verze ' + pkg.version + ' nenaběhla, vracím se k verzi ' + bundled + '.';
+    notice = 'Verze ' + pkg.version + ' nenaběhla, obnovena verze ' + bundled + '.';
     pkg = null;
   }
   set('pending', null);

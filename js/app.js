@@ -28,13 +28,13 @@
   // kde klíče zdarma získat (odkazy v Nastavení → Klíče a v README)
   var KEY_SOURCES = {
     tmdbKey: { url: 'https://www.themoviedb.org/settings/api',
-      how: 'Zaregistruj se na themoviedb.org, v Nastavení → API požádej o klíč (Developer, osobní použití) a zkopíruj „API Key".' },
+      how: 'Po registraci na themoviedb.org je potřeba v Nastavení → API požádat o klíč (Developer, osobní použití) a zkopírovat „API Key".' },
     omdbKey: { url: 'https://www.omdbapi.com/apikey.aspx',
-      how: 'Vyber FREE (1000 dotazů denně), vyplň e-mail a klíč ti přijde do pošty. V e-mailu ho ještě aktivuj odkazem.' },
+      how: 'Je potřeba zvolit FREE (1000 dotazů denně) a vyplnit e-mail. Klíč přijde e-mailem a je nutné jej aktivovat odkazem v e-mailu.' },
     watchmodeKey: { url: 'https://api.watchmode.com/requestApiKey/',
-      how: 'Zaregistruj se (Free plán), klíč najdeš po přihlášení v sekci API Key.' },
+      how: 'Po registraci (plán Free) je klíč uveden v sekci API Key.' },
     motnKey: { url: 'https://developers.movieofthenight.com/',
-      how: 'Zaregistruj se, zvol plán Free a v přehledu zkopíruj API key.' }
+      how: 'Po registraci je potřeba zvolit plán Free a v přehledu zkopírovat API key.' }
   };
   function openExternal(url) {
     if (ANDROID && ANDROID.openUrl && ANDROID.openUrl(url, '')) return;
@@ -295,7 +295,7 @@
     if (IS_TV) {
       try { window.tizen.application.getCurrentApplication().exit(); } catch (e) { /* nic */ }
     } else {
-      toast('V televizi by se teď aplikace zavřela.');
+      toast('V televizi by se nyní aplikace zavřela.');
     }
   }
 
@@ -561,7 +561,7 @@
     }
   }
   function leavingBanner(list) {
-    return h('div', { class: 'banner leavebanner' }, ['Z tvého seznamu brzy odchází: ',
+    return h('div', { class: 'banner leavebanner' }, ['Ze seznamu Chci vidět brzy odchází: ',
       h('b', { text: list.map(function (w) { return w.title + ' (' + fmtTs(leavingTs(w.key)) + ')'; }).join(', ') })]);
   }
   function titulu(n) { return n + (n === 1 ? ' titul' : n >= 2 && n <= 4 ? ' tituly' : ' titulů'); }
@@ -825,9 +825,9 @@
   }
 
   function errorText(err) {
-    if (err && err.message === 'MOTN_LIMIT') return 'Došel měsíční limit dotazů na český dabing (Movie of the Night). Vypni filtr Český dabing, od 1. dne v měsíci zase pojede.';
+    if (err && err.message === 'MOTN_LIMIT') return 'Došel měsíční limit dotazů na český dabing (Movie of the Night). Filtr Český dabing je potřeba vypnout; znovu bude k dispozici od 1. dne dalšího měsíce.';
     if (err && err.message === 'NO_MOTN') return 'Pro filtr Český dabing chybí klíč Movie of the Night.';
-    if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro tipy a vyhledávání vlož klíč TMDB v Nastavení → Klíče.' : 'Chybí klíč TMDB. Nejsnáze ho přeneseš z mobilní Videotéky: v televizi otevři Nastavení → Telefon a naskenuj QR kód.';
+    if (err && err.message === 'NO_KEY') return MOBILE ? 'Pro zobrazení titulů a vyhledávání je potřeba vložit klíč TMDB v Nastavení → Klíče.' : 'Chybí klíč TMDB. Lze jej přenést z mobilní Videotéky: v televizi otevřít Nastavení → Telefon a v telefonu naskenovat QR kód.';
     return 'Nepodařilo se načíst data (' + (err && err.message || 'chyba sítě') + ').';
   }
 
@@ -878,11 +878,11 @@
     if (ANDROID) {
       var pkg = androidPackage(service);
       if (pkg && ANDROID.launch(pkg)) return;
-      toast(service.name + ' v telefonu není – otevírám Google Play.');
+      toast(service.name + ' v telefonu není nainstalován – otevírá se Google Play.');
       ANDROID.openUrl('https://play.google.com/store/apps/details?id=' + ((service.android || [])[0] || ''), '');
       return;
     }
-    if (!IS_TV) { toast('V televizi by se teď spustila aplikace ' + service.name + '.'); return; }
+    if (!IS_TV) { toast('V televizi by se nyní spustila aplikace ' + service.name + '.'); return; }
     var ids = candidateIds(service), i = 0, errs = [];
     var mode = launchMode(service);
     toast(hint || 'Spouštím ' + service.name + '…');
@@ -1048,7 +1048,7 @@
         if (!ANDROID.openUrl(url, androidPackage(service) || '')) launchService(service);
         return;
       }
-      if (!IS_TV) { toast('V televizi bych otevřel ' + service.name + ' rovnou na ' + url); return; }
+      if (!IS_TV) { toast('V televizi by se otevřel ' + service.name + ' přímo na ' + url); return; }
       deepLaunch(service, url, item);
     }).catch(function (err) {
       launchService(service, hint);
@@ -1067,7 +1067,7 @@
     var yes = h('div', { class: 'btn secondary focusable', 'data-fid': 'fb-yes', text: 'Ano',
       onselect: function () {
         st.deepOk = fb.method; st.deep = 'auto'; st.deepTried = [];
-        save('settings', settings); toast('Super, u ' + fb.service.name + ' si to pamatuju.');
+        save('settings', settings); toast('Uloženo: u služby ' + fb.service.name + ' přímý skok funguje.');
         info.removeChild(box); setFocus(info.querySelector('.btn.play') || info.querySelector('.focusable'));
       } });
     var no = h('div', { class: 'btn secondary focusable', 'data-fid': 'fb-no', text: 'Ne, jen úvodní obrazovka',
@@ -1077,10 +1077,10 @@
         st.deepTried = tried;
         st.deep = next || 'off';
         save('settings', settings);
-        toast(next ? 'Příště zkusím u ' + fb.service.name + ' ' + DEEP_LABEL[next] + '.' : 'Přímý skok u ' + fb.service.name + ' nefunguje, budu otevírat jen aplikaci.');
+        toast(next ? 'Příště se u služby ' + fb.service.name + ' použije ' + DEEP_LABEL[next] + '.' : 'Přímý skok u služby ' + fb.service.name + ' nefunguje, bude se otevírat pouze aplikace.');
         info.removeChild(box); setFocus(info.querySelector('.btn.play') || info.querySelector('.focusable'));
       } });
-    box.appendChild(h('div', { class: 'fbq', text: 'Otevřel se v ' + fb.service.name + ' rovnou „' + fb.item.title + '"?' }));
+    box.appendChild(h('div', { class: 'fbq', text: 'Otevřel se v ' + fb.service.name + ' přímo titul „' + fb.item.title + '"?' }));
     box.appendChild(yes);
     box.appendChild(no);
     info.appendChild(box);
@@ -1196,7 +1196,7 @@
       setBadges(cardEl, res.mine);
       if (!res.mine.length) {
         cardEl.classList.add('away');
-        cardEl.querySelector('.poster').appendChild(h('div', { class: 'awaytag', text: 'už na tvých službách není' }));
+        cardEl.querySelector('.poster').appendChild(h('div', { class: 'awaytag', text: 'už není ve vybraných službách' }));
       }
     }).catch(function () {});
   }
@@ -1275,7 +1275,7 @@
     }
     focused = null;
     setFocus(next && document.body.contains(next) ? next : focusablesIn(root)[0]);
-    toast((reason === 'seen' ? 'Viděno: ' : 'Skryto: ') + item.title + ' · žluté tlačítko vrátí');
+    toast((reason === 'seen' ? 'Viděno: ' : 'Skryto: ') + item.title + ' · žlutým tlačítkem lze vrátit');
   }
 
   // ------------------------------------------------------------------ kde jsem v seriálu skončil
@@ -1354,7 +1354,7 @@
         r.appendChild(cEl);
         if (!x.t.base) markAvailability(cEl, x.t.item);
       });
-      slot.appendChild(row('Nové díly a řady', 'seriály, které chceš vidět nebo jsi viděl · zelené = viděl jsem i nové', r));
+      slot.appendChild(row('Nové díly a řady', 'seriály ze seznamu Chci vidět a zhlédnuté seriály · zelené tlačítko = nové díly zhlédnuty', r));
       restorePendingFocus();
       reapplyHomeScroll();
     });
@@ -1396,7 +1396,7 @@
         arrivals.unshift(f);
       });
       save('arrivals', arrivals);
-      toast('Přibylo na tvých službách: ' + found.map(function (f) {
+      toast('Nově ve vybraných službách: ' + found.map(function (f) {
         var w = watchlist.filter(function (x) { return x.key === f.key; })[0];
         return w ? w.title : '';
       }).join(', '));
@@ -1422,9 +1422,9 @@
         clear(slot);
         focused = null;
         setFocus(focusablesIn(currentScreen.el)[0]);
-      } }, [h('div', { class: 'poster' }, [h('div', { class: 'ph', text: '✓ Beru na vědomí' })])]);
+      } }, [h('div', { class: 'poster' }, [h('div', { class: 'ph', text: '✓ Skrýt upozornění' })])]);
     r.appendChild(done);
-    slot.appendChild(row('Přibylo na tvých službách', 'z tvého seznamu Chci vidět', r));
+    slot.appendChild(row('Nově ve vybraných službách', 'ze seznamu Chci vidět', r));
   }
 
   // ------------------------------------------------------------------ pořadí řádků
@@ -1464,7 +1464,7 @@
     var el = h('div', {
       class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
       onselect: function () {
-        if (kind !== 'cz' && !hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr vlož v Nastavení → Klíče klíč OMDb.' : 'Pro hodnocení a filtr doplň OMDb klíč do js/config.js (viz README).'); return; }
+        if (kind !== 'cz' && !hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr je potřeba vložit klíč OMDb v Nastavení → Klíče.' : 'Pro hodnocení a filtr je potřeba klíč OMDb (přenos z telefonu: Nastavení → Telefon).'); return; }
         var i = steps.indexOf(filt()[kind] || steps[0]);
         filt()[kind] = steps[(i + 1) % steps.length];
         save('settings', settings);
@@ -1512,10 +1512,10 @@
     });
     var leavingWl = watchlist.filter(function (w) { return leavingTs(w.key); });
     if (leavingWl.length) body.appendChild(leavingBanner(leavingWl));
-    body.appendChild(row('Moje služby', MOBILE ? 'klepnutím spustíš aplikaci' : 'OK spustí aplikaci · na plakátu: červené = nezajímá mě, zelené = viděl jsem', tiles));
+    body.appendChild(row('Služby', MOBILE ? 'klepnutím se spustí aplikace' : 'OK spustí aplikaci · na plakátu: červené tlačítko = skrýt, zelené = zhlédnuto', tiles));
     if (!CFG.tmdbKey && MOBILE) {
       body.appendChild(h('div', { class: 'banner focusable', 'data-fid': 'need-keys', onselect: function () { settingsTab = 'klice'; go('settings'); } },
-        [h('b', { text: 'Vítej ve Videotéce! ' }), 'Pro zobrazení titulů je potřeba bezplatný klíč TMDB. Klepnutím otevřeš Nastavení → Klíče, kde je u každého klíče odkaz a postup.']));
+        [h('b', { text: 'Videotéka potřebuje klíč TMDB. ' }), 'Klíč je zdarma. Klepnutím se otevře Nastavení → Klíče s odkazem a postupem u každého klíče.']));
     }
 
     // přibylo na tvých službách – vždy nahoře
@@ -1530,7 +1530,7 @@
       var r = h('div', { class: 'hscroll' });
       for (var i = 0; i < 7; i++) r.appendChild(h('div', { class: 'card loading' }, [h('div', { class: 'poster' })]));
       var subText = function (extra) { return [sub, anyFilter() ? 'filtr ' + filterLabel() + (extra || '') : ''].filter(Boolean).join(' · '); };
-      var rowEl = row(title, subText(filterActive() ? ' · ověřuji hodnocení…' : ''), r);
+      var rowEl = row(title, subText(filterActive() ? ' · ověřování hodnocení…' : ''), r);
       var openAll = function () { go('grid', { title: title, sub: sub, opts: opts, serviceIds: serviceIds || null, tabs: tabs || null }); };
       var head = rowEl.querySelector('h2');
       head.className = MOBILE ? 'rowhead focusable' : 'rowhead';
@@ -1546,7 +1546,7 @@
         if (small) small.textContent = subText(res.hidden ? ' · skryto ' + res.hidden : '');
         clear(r);
         if (!items.length) {
-          rowEl.replaceChild(h('div', { class: 'note', text: anyFilter() ? 'Nic nesplňuje filtr ' + filterLabel() + '.' : 'Na tvých službách tu teď nic není.' }), r);
+          rowEl.replaceChild(h('div', { class: 'note', text: anyFilter() ? 'Nic nesplňuje filtr ' + filterLabel() + '.' : 'Ve vybraných službách zde nyní nic není.' }), r);
           return;
         }
         items.forEach(function (it, idx) {
@@ -1575,7 +1575,7 @@
     var providers = allProviders();
     var canDiscover = providers.length && (c.series || c.movies);
     if (!c.series && !c.movies) {
-      body.appendChild(h('div', { class: 'banner', text: 'V Nastavení → Obsah máš vypnuté seriály i filmy, takže tu nic není.' }));
+      body.appendChild(h('div', { class: 'banner', text: 'V Nastavení → Obsah jsou vypnuté seriály i filmy.' }));
     }
     rowOrder().forEach(function (id) {
       if (id === 'watchlist') {
@@ -1597,16 +1597,16 @@
       }
       if (!canDiscover || !isRowOn(id)) return;
       if (id === 'leaving') {
-        if (CFG.motnKey) addRow('Brzy odchází', 'z katalogu tvých služeb, nejbližší první', 'leave-', { providers: providers, changes: 'expiring' });
+        if (CFG.motnKey) addRow('Brzy odchází', 'z katalogu vybraných služeb, nejbližší první', 'leave-', { providers: providers, changes: 'expiring' });
         return;
       }
       if (id === 'newest' && CFG.motnKey) {
-        addRow('Nově přidáno', 'tituly, které tvým službám přibyly do katalogu', 'new-', { providers: providers, changes: 'new' });
+        addRow('Nově přidáno', 'tituly nově přidané do katalogu vybraných služeb', 'new-', { providers: providers, changes: 'new' });
         return;
       }
       if (id === 'newest') {
         var day = function (n) { return new Date(Date.now() - n * DAY).toISOString().slice(0, 10); };
-        addRow('Nově přidáno', 'nové filmy a seriály s novými díly na tvých službách', 'new-', {
+        addRow('Nově přidáno', 'nové filmy a seriály s novými díly ve vybraných službách', 'new-', {
           providers: providers, movie: '', tv: '',
           extraMovie: { 'primary_release_date.gte': day(120), 'primary_release_date.lte': day(0), 'vote_count.gte': 5 },
           extraTv: { 'air_date.gte': day(30), 'air_date.lte': day(0) },
@@ -1614,7 +1614,7 @@
         });
         return;
       }
-      if (id === 'trending') { addRow('Nejpopulárnější na tvých službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '', mOrder: 'popularity_1month' }); return; }
+      if (id === 'trending') { addRow('Nejpopulárnější ve vybraných službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '', mOrder: 'popularity_1month' }); return; }
       if (id === 'byService') {
         enabledServices().forEach(function (s) {
           addRow('Populární na ' + s.name, typesLabel(), 'pop-' + s.id + '-', { providers: s.providers, movie: '', tv: '', services: [s.id] }, [s.id]);
@@ -1682,10 +1682,10 @@
       var my = ++seq;
       clear(grid);
       if (query.trim().length < 2) {
-        grid.appendChild(h('div', { class: 'msg', text: MOBILE ? 'Napiš název. Výsledky se ukážou i se službou, kde titul běží.' : 'Piš na klávesnici vlevo. Výsledky se ukážou tady i se službou, kde titul běží.' }));
+        grid.appendChild(h('div', { class: 'msg', text: MOBILE ? 'Vyhledávání podle názvu. U výsledků je uvedena služba, ve které je titul k dispozici.' : 'Název se zadává klávesnicí vlevo. U výsledků je uvedena služba, ve které je titul k dispozici.' }));
         return;
       }
-      grid.appendChild(h('div', { class: 'msg', text: filterActive() ? 'Hledám a ověřuji hodnocení…' : 'Hledám…' }));
+      grid.appendChild(h('div', { class: 'msg', text: filterActive() ? 'Vyhledávání a ověřování hodnocení…' : 'Vyhledávání…' }));
       tmdb('/search/multi', { query: query.trim(), include_adult: 'false' }).then(function (j) {
         var all = (j.results || []).filter(function (r) { return r.media_type === 'movie' || r.media_type === 'tv'; })
           .slice(0, 18).map(function (r) { return normalize(r); });
@@ -1694,8 +1694,8 @@
         if (my !== seq) return;
         clear(grid);
         var items = res.items;
-        if (res.hidden) grid.appendChild(h('div', { class: 'msg small', text: 'Filtr ' + filterLabel() + ' skryl ' + res.hidden + ' výsledků (mění se na domovské obrazovce).' }));
-        if (!items.length) { grid.appendChild(h('div', { class: 'msg', text: res.hidden ? 'Nic nesplňuje filtr.' : 'Nic jsem nenašel.' })); return; }
+        if (res.hidden) grid.appendChild(h('div', { class: 'msg small', text: 'Filtr ' + filterLabel() + ' skryl ' + res.hidden + ' výsledků (filtr lze změnit na domovské obrazovce).' }));
+        if (!items.length) { grid.appendChild(h('div', { class: 'msg', text: res.hidden ? 'Nic nesplňuje filtr.' : 'Nic nebylo nalezeno.' })); return; }
         items.forEach(function (it) {
           var c = card(it, 'sr-' + it.key);
           grid.appendChild(c);
@@ -1814,7 +1814,7 @@
       h('div', { class: 'dposter' }, [item.poster ? h('img', { src: IMG + 'w500' + item.poster, alt: '' }) : null]),
       info
     ]));
-    root.appendChild(h('div', { class: 'hintbar', text: (CFG.watchmodeKey ? 'OK otevře titul rovnou ve službě' : 'OK otevře aplikaci služby (pro skok rovnou na titul doplň Watchmode klíč)') + ' · Zpět vrátí na předchozí obrazovku' }));
+    root.appendChild(h('div', { class: 'hintbar', text: (CFG.watchmodeKey ? 'OK otevře titul přímo ve službě' : 'OK otevře aplikaci služby (pro přímý skok na titul je potřeba klíč Watchmode)') + ' · Zpět vrátí na předchozí obrazovku' }));
 
     var foundServices = [];
     var listBtn = h('div', {
@@ -1825,10 +1825,10 @@
         listBtn.textContent = inWatchlist(item) ? '✓ V seznamu' : '+ Chci vidět';
       }
     });
-    var loading = h('div', { class: 'also', text: 'Zjišťuji dostupnost…' });
+    var loading = h('div', { class: 'also', text: 'Zjišťování dostupnosti…' });
     var epBtn = null;
     if (MOBILE && validCode(load('tvCode', ''))) {
-      actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: '📺 Pošli do TV', onselect: function () { sendToTv(item); } }));
+      actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: '📺 Poslat do TV', onselect: function () { sendToTv(item); } }));
     }
     if (item.type === 'tv' && CFG.tmdbKey) {
       var pr = progress[item.key];
@@ -1845,13 +1845,13 @@
     if (he) {
       dbtn('d-unhide', 'Vrátit do nabídky', function () { unhide(item.key); toast('Vráceno: ' + item.title); back(); });
       if (he.reason === 'seen' && item.type === 'tv') {
-        dbtn('d-seen-new', 'Viděl jsem i nové díly', function () { hideItem(item, 'seen'); toast('Zapamatováno, další díly ti zase ukážu.'); back(); });
+        dbtn('d-seen-new', 'Nové díly zhlédnuty', function () { hideItem(item, 'seen'); toast('Uloženo. Další nové díly se opět zobrazí.'); back(); });
       }
     } else {
-      dbtn('d-skip', '✕ Nezajímá mě', function () { hideItem(item, 'skip'); toast('Skryto: ' + item.title + ' · vrátíš v Nastavení'); back(); });
-      dbtn('d-seen', '✓ Už jsem viděl', function () {
+      dbtn('d-skip', '✕ Skrýt', function () { hideItem(item, 'skip'); toast('Skryto: ' + item.title + ' · lze vrátit v Nastavení → Aplikace'); back(); });
+      dbtn('d-seen', '✓ Zhlédnuto', function () {
         hideItem(item, 'seen');
-        toast('Viděno: ' + item.title + (item.type === 'tv' ? ' · nové díly ti ukážu' : ''));
+        toast('Viděno: ' + item.title + (item.type === 'tv' ? ' · nové díly se zobrazí' : ''));
         back();
       });
     }
@@ -1876,9 +1876,9 @@
         actions.insertBefore(b, epBtn || listBtn);
         if (!firstPlay) firstPlay = b;
       });
-      if (!res.mine.length) info.appendChild(h('div', { class: 'unavailable', text: 'Na tvých službách teď není.' }));
+      if (!res.mine.length) info.appendChild(h('div', { class: 'unavailable', text: 'Ve vybraných službách nyní není.' }));
       if (CFG.motnKey && res.mine.length) {
-        var dubEl = h('div', { class: 'also dubline', text: 'Zjišťuji český dabing…' });
+        var dubEl = h('div', { class: 'also dubline', text: 'Zjišťování českého dabingu…' });
         info.appendChild(dubEl);
         dubFor(item).then(function (d) {
           if (!d) { dubEl.textContent = 'Český dabing: nezjištěno.'; return; }
@@ -1917,9 +1917,9 @@
     if (!updateState) return 'zatím nekontrolováno';
     if (updateState.checking) return 'kontroluji…';
     switch (updateState.status) {
-      case 'latest': return 'máš nejnovější verzi';
+      case 'latest': return 'nejnovější verze';
       case 'reinstall': return 'verze ' + updateState.version + ' vyžaduje přeinstalovat';
-      case 'bad': return 'verze ' + updateState.version + ' nenaběhla, čekám na opravu';
+      case 'bad': return 'verze ' + updateState.version + ' nenaběhla, čeká se na opravu';
       case 'error': return 'kontrola selhala (' + updateState.message + ')';
       default: return '';
     }
@@ -1932,7 +1932,7 @@
       updateState = res;
       if (res.status === 'ready') toast('Nová verze ' + res.version + ' je připravená' + (res.notes ? ': ' + res.notes : '') + '. Použije se při dalším spuštění.');
       else if (res.status === 'reinstall') toast('Verze ' + res.version + ' potřebuje znovu nainstalovat aplikaci (viz README).');
-      else if (manual) toast('Máš nejnovější verzi ' + UPD.version + '.');
+      else if (manual) toast('Nainstalována je nejnovější verze ' + UPD.version + '.');
     }).catch(function (err) {
       updateState = { status: 'error', message: err.message };
       if (manual) toast('Aktualizace se nepodařilo zkontrolovat: ' + err.message);
@@ -2048,7 +2048,7 @@
     // ---------------------------------------------------------------- Služby
     if (settingsTab === 'sluzby') {
       add(h('div', { class: 'sintro', text: 'Vypnuté služby se nezobrazují v řádcích ani ve výsledcích hledání. ' +
-        (IS_TV ? 'Pokud se služba nespustí, vyber její aplikaci ručně.' : '') }));
+        (IS_TV ? 'Pokud se služba nespustí, je potřeba vybrat její aplikaci ručně.' : '') }));
       if (IS_TV) {
         var closeBtn = sbtn('set-closeafter', 'Zavřít Videotéku po spuštění služby: ' + (closeAfterLaunch() ? 'ano' : 'ne'), function () {
           settings._closeAfter = !closeAfterLaunch();
@@ -2101,7 +2101,7 @@
       if (MOBILE) {
         var inputs = {};
         KEY_NAMES.forEach(function (n) {
-          var inp = h('input', { class: 'minput', type: 'text', placeholder: 'Vlož klíč ' + labels[n], autocomplete: 'off', spellcheck: 'false' });
+          var inp = h('input', { class: 'minput', type: 'text', placeholder: 'Klíč ' + labels[n], autocomplete: 'off', spellcheck: 'false' });
           inp.value = CFG[n] || '';
           inputs[n] = inp;
           var src = KEY_SOURCES[n];
@@ -2136,15 +2136,15 @@
         var paired = validCode(tvCode);
         var codeIn = h('input', { class: 'minput', type: 'text', placeholder: 'Kód z televize (20 znaků)', autocomplete: 'off' });
         add(scard([ 'Spárování s televizí', h('span', { class: paired ? 'kstate ok' : 'kstate', text: paired ? 'spárováno' : 'nespárováno' }) ],
-          paired ? 'V detailu titulu je k dispozici tlačítko Pošli do TV.'
-            : 'V televizi otevři Nastavení → Telefon a naskenuj zobrazený QR kód. Telefon následně do televize přenese i klíče.', [
+          paired ? 'V detailu titulu je k dispozici tlačítko Poslat do TV.'
+            : 'V televizi je potřeba otevřít Nastavení → Telefon a naskenovat zobrazený QR kód. Telefon následně do televize přenese i klíče.', [
             sline(null, [
               sbtn('set-scan', paired ? 'Spárovat znovu (QR)' : 'Naskenovat QR kód', function () { go('scan'); }, 'primary'),
               paired ? sbtn('set-sendkeys', 'Poslat klíče do televize', function () { sendKeysToTv(); }) : null,
               paired ? sbtn('set-unpair', 'Zrušit spárování', function () { save('tvCode', ''); refreshSettings('set-scan'); }) : null
             ])
           ]));
-        add(scard('Spárování kódem', 'Pokud nelze použít fotoaparát, opiš kód zobrazený pod QR kódem.', [
+        add(scard('Spárování kódem', 'Pokud nelze použít fotoaparát, je potřeba opsat kód zobrazený pod QR kódem.', [
           codeIn,
           sline(null, [sbtn('set-pair', 'Spárovat kódem', function () { if (pairWith(codeIn.value)) refreshSettings('set-scan'); })])
         ]));
@@ -2152,7 +2152,7 @@
         var pc = load('pairCode', '');
         var pcOk = validCode(pc);
         add(scard('Telefon jako ovladač', pcOk
-          ? 'V mobilní Videotéce otevři Nastavení → Televize → Naskenovat QR kód. Telefon následně přenese i klíče.'
+          ? 'V mobilní Videotéce je potřeba otevřít Nastavení → Televize → Naskenovat QR kód. Telefon následně přenese i klíče.'
           : 'Po spárování lze z telefonu posílat tituly do televize a přenést klíče.', [
           h('div', { class: 'pairrow' }, [
             pcOk ? qrImage(QR_PREFIX + pc) : null,
@@ -2183,9 +2183,9 @@
           ])
         ]));
       }
-      add(scard('Seznamy', MOBILE ? null : 'Na plakátu: červené tlačítko = nezajímá mě, zelené = viděno, žluté = vrátit poslední skrytí.', [
+      add(scard('Seznamy', MOBILE ? null : 'Na plakátu: červené tlačítko = skrýt, zelené = zhlédnuto, žluté = vrátit poslední skrytí.', [
         sline(null, [
-          sbtn('set-hidden', 'Skryté a viděné tituly (' + Object.keys(hiddenItems).length + ') ›', function () { go('hiddenlist'); }),
+          sbtn('set-hidden', 'Skryté a zhlédnuté tituly (' + Object.keys(hiddenItems).length + ') ›', function () { go('hiddenlist'); }),
           sbtn('set-clear-wl', 'Vyprázdnit seznam Chci vidět (' + watchlist.length + ')', function () {
             watchlist = []; save('watchlist', watchlist); toast('Seznam Chci vidět je prázdný.'); refreshSettings('set-clear-wl');
           })
@@ -2210,7 +2210,7 @@
     root.appendChild(topbar([h('div', { class: 'eptitle', text: params.title })]));
     var sc = h('div', { class: 'vscroll gridscreen' });
     var grid = h('div', { class: 'grid' });
-    var status = h('div', { class: 'sinfo gridstatus', text: 'Načítám…' });
+    var status = h('div', { class: 'sinfo gridstatus', text: 'Načítání…' });
     sc.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: params.title }),
       params.sub ? h('small', { text: params.sub + (anyFilter() ? ' · filtr ' + filterLabel() : '') }) : null]));
     var curOpts = params.opts;
@@ -2242,7 +2242,7 @@
       if (loading || done) return;
       loading = true;
       page++;
-      status.textContent = 'Načítám…';
+      status.textContent = 'Načítání…';
       var myGen = gen;
       discover(Object.assign({}, curOpts, { page: page })).then(function (items) {
         if (myGen !== gen) return { items: [], hidden: 0, stale: true };
@@ -2265,7 +2265,7 @@
         if (page >= 25) done = true;
         // s přísným filtrem může stránka zůstat prázdná – zkus další, ale ne donekonečna
         if (!res.items.length && !done) { if (++empty < 4) { loadMore(); return; } done = true; } else empty = 0;
-        status.textContent = done ? (count ? 'To je všechno (' + count + ' titulů).' : 'Nic tu není.') : '';
+        status.textContent = done ? (count ? 'Zobrazeny všechny tituly (' + count + ' titulů).' : 'Nic nebylo nalezeno.') : '';
         if (!done && sc.scrollHeight <= sc.clientHeight + 50) loadMore(); // obrazovka ještě není plná
       }).catch(function (err) {
         loading = false;
@@ -2375,19 +2375,19 @@
     postToTv({ a: 'open', item: { key: item.key, id: item.id, type: item.type, title: item.title, year: item.year,
       poster: item.poster, backdrop: item.backdrop, overview: item.overview, vote: item.vote } })
       .then(function () { toast('Odesláno do televize: ' + item.title); })
-      .catch(function (err) { toast(err.message === 'NOT_PAIRED' ? 'Nejdřív spáruj televizi v Nastavení → Televize.' : 'Odeslání se nepovedlo – zkontroluj internet.'); });
+      .catch(function (err) { toast(err.message === 'NOT_PAIRED' ? 'Nejprve je potřeba spárovat televizi v Nastavení → Televize.' : 'Odeslání se nezdařilo. Je potřeba ověřit připojení k internetu.'); });
   }
   function sendKeysToTv() {
     var keys = {};
     KEY_NAMES.forEach(function (n) { if (CFG[n]) keys[n] = CFG[n]; });
-    if (!keys.tmdbKey) { toast('V telefonu zatím nemáš klíč TMDB, není co posílat.'); return Promise.resolve(); }
+    if (!keys.tmdbKey) { toast('V telefonu zatím není uložen klíč TMDB.'); return Promise.resolve(); }
     return postToTv({ a: 'keys', keys: keys })
-      .then(function () { toast('Klíče odeslány do televize. Televize se za chvíli sama restartuje.'); })
-      .catch(function () { toast('Klíče se nepodařilo odeslat – zkontroluj internet.'); });
+      .then(function () { toast('Klíče byly odeslány. Televize se za chvíli sama restartuje.'); })
+      .catch(function () { toast('Klíče se nepodařilo odeslat. Je potřeba ověřit připojení k internetu.'); });
   }
   function pairWith(raw) {
     var c = normCode(raw);
-    if (!validCode(c)) { toast('Kód má 20 znaků, opiš ho přesně z televize (nebo naskenuj QR).'); return false; }
+    if (!validCode(c)) { toast('Kód má 20 znaků a musí přesně odpovídat kódu v televizi.'); return false; }
     save('tvCode', c);
     sendKeysToTv();
     toast('Spárováno s televizí');
@@ -2413,7 +2413,7 @@
         KEY_NAMES.forEach(function (n) { if (m.keys[n] && m.keys[n] !== k[n]) { k[n] = m.keys[n]; changed = true; } });
         if (!changed) { toast('Klíče z telefonu už televize má.'); return; }
         save('keys', k);
-        toast('Klíče z telefonu uloženy, restartuji…');
+        toast('Klíče z telefonu byly uloženy, aplikace se restartuje…');
         setTimeout(function () { location.reload(); }, 1800);
       }
     };
@@ -2443,7 +2443,7 @@
     clear(root);
     root.appendChild(topbar([h('div', { class: 'eptitle', text: 'Skenování' })]));
     var video = h('video', { class: 'scanvideo', playsinline: 'true', muted: 'true', autoplay: 'true' });
-    var msg = h('div', { class: 'sinfo scanmsg', text: 'Namiř telefon na QR kód v televizi (Nastavení → Telefon).' });
+    var msg = h('div', { class: 'sinfo scanmsg', text: 'Telefon je potřeba namířit na QR kód v televizi (Nastavení → Telefon).' });
     var cancel = h('div', { class: 'btn focusable', 'data-fid': 'scan-cancel', text: 'Zrušit', onselect: function () { back(); } });
     root.appendChild(h('div', { class: 'scanwrap' }, [video, msg, cancel]));
     var stream = null, canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
@@ -2463,7 +2463,7 @@
       setTimeout(tick, 250);
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      msg.textContent = 'Fotoaparát tady není k dispozici – opiš kód z televize ručně.';
+      msg.textContent = 'Fotoaparát není k dispozici. Kód z televize je potřeba opsat ručně.';
       return cancel;
     }
     loadJsQR().then(function () {
@@ -2477,8 +2477,8 @@
       tick();
     }).catch(function (err) {
       msg.textContent = err && err.message === 'jsQR'
-        ? 'Skenování potřebuje novější APK Videotéky. Zatím opiš kód z televize ručně.'
-        : 'Fotoaparát se nepodařilo spustit (' + ((err && err.name) || 'chyba') + '). Povol ho Videotéce, nebo opiš kód ručně.';
+        ? 'Skenování vyžaduje novější verzi APK. Kód z televize je zatím potřeba opsat ručně.'
+        : 'Fotoaparát se nepodařilo spustit (' + ((err && err.name) || 'chyba') + '). Je potřeba povolit přístup k fotoaparátu, nebo kód opsat ručně.';
     });
     return cancel;
   });
@@ -2489,9 +2489,9 @@
     root.appendChild(topbar([h('div', { class: 'eptitle', text: 'Kalendář' })]));
     var body = h('div', { class: 'vscroll calbody' });
     root.appendChild(body);
-    var status = h('div', { class: 'sinfo calstatus', text: 'Načítám…' });
-    body.appendChild(h('div', { class: 'gridhead' }, [h('span', { class: 'gtitle', text: 'Co přibude' }),
-      h('small', { text: CFG.motnKey ? 'nové tituly na tvých službách a další díly seriálů, které sleduješ' : 'další díly seriálů, které sleduješ (pro nové tituly služeb vlož klíč Movie of the Night)' })]));
+    var status = h('div', { class: 'sinfo calstatus', text: 'Načítání…' });
+    body.appendChild(h('div', { class: 'gridhead' }, [
+      h('small', { text: CFG.motnKey ? 'Nové tituly ve vybraných službách a další díly sledovaných seriálů.' : 'Další díly sledovaných seriálů. Pro nové tituly služeb je potřeba klíč Movie of the Night.' })]));
     body.appendChild(status);
 
     var today = new Date(); today.setHours(0, 0, 0, 0);
@@ -2517,7 +2517,7 @@
         events.push({ date: ne.air_date, item: t.item, tag: (ne.episode_number === 1 ? 'nová řada ' : 'díl ') + ne.season_number + '×' + ne.episode_number });
       }).catch(function () {}));
     });
-    // co přibude do katalogu služeb (2 stránky = až 50 změn)
+    // nové tituly v katalogu služeb (2 stránky = až 50 změn)
     if (CFG.motnKey) {
       jobs.push(changesPage('upcoming', 1).then(function (e1) {
         return (e1.next ? changesPage('upcoming', 2) : Promise.resolve({ entries: [] })).then(function (e2) {
@@ -2525,7 +2525,7 @@
           return entriesToItems(all).then(function (items) {
             items.forEach(function (it) {
               var sv = serviceById(it.change.svc);
-              events.push({ date: ymd(new Date(it.change.ts * 1000)), item: it, tag: 'přibude', services: sv ? [sv] : [] });
+              events.push({ date: ymd(new Date(it.change.ts * 1000)), item: it, tag: null, services: sv ? [sv] : [] });
             });
           });
         });
@@ -2538,13 +2538,13 @@
       events.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
       var groups = {}, order = [];
       events.forEach(function (ev) { if (!groups[ev.date]) { groups[ev.date] = []; order.push(ev.date); } groups[ev.date].push(ev); });
-      if (status.textContent === 'Načítám…') status.textContent = order.length ? '' : 'V nejbližších týdnech tu nic není.';
+      if (status.textContent === 'Načítání…') status.textContent = order.length ? '' : 'V nejbližších týdnech není nic naplánováno.';
       var firstCard = null;
       order.forEach(function (date) {
         var r = h('div', { class: 'hscroll' });
         groups[date].forEach(function (ev) {
           var c = card(ev.item, 'cal-' + date + '-' + ev.item.key, null);
-          c.querySelector('.poster').appendChild(h('div', { class: 'newtag' + (ev.tag === 'přibude' ? ' soon' : ''), text: ev.tag }));
+          if (ev.tag) c.querySelector('.poster').appendChild(h('div', { class: 'newtag', text: ev.tag }));
           if (ev.services) setBadges(c, ev.services);
           r.appendChild(c);
           if (!firstCard) firstCard = c;
@@ -2564,7 +2564,7 @@
     var sc = h('div', { class: 'vscroll gridscreen' });
     var head = h('div', { class: 'personhead' });
     var grid = h('div', { class: 'grid' });
-    var status = h('div', { class: 'sinfo gridstatus', text: 'Hledám, co s ním běží na tvých službách…' });
+    var status = h('div', { class: 'sinfo gridstatus', text: 'Vyhledávání titulů ve vybraných službách…' });
     sc.appendChild(head); sc.appendChild(grid); sc.appendChild(status);
     root.appendChild(sc);
     tmdb('/person/' + params.id, { append_to_response: 'combined_credits' }).then(function (p) {
@@ -2600,7 +2600,7 @@
           status.textContent = 'Prohledáno ' + done + ' z ' + list.length + ' titulů…';
         }, function () { done++; });
       })).then(function () {
-        status.textContent = found ? 'Na tvých službách: ' + titulu(found) + '.' : 'Teď s ním na tvých službách nic neběží.';
+        status.textContent = found ? 'Ve vybraných službách: ' + titulu(found) + '.' : 'Ve vybraných službách nyní není žádný titul.';
       });
     }).catch(function (err) { status.textContent = errorText(err); });
     return null;
@@ -2617,7 +2617,7 @@
     wrap.appendChild(seasonsEl);
     wrap.appendChild(listWrap);
     root.appendChild(wrap);
-    seasonsEl.appendChild(h('div', { class: 'sinfo', text: 'Načítám série…' }));
+    seasonsEl.appendChild(h('div', { class: 'sinfo', text: 'Načítání sérií…' }));
 
     var services = [];
     providersFor(item).then(function (res) { services = res.mine; }).catch(function () {});
@@ -2628,7 +2628,7 @@
       setProgress(item, ep.season_number, ep.episode_number);
       markList();
       var s = services[0];
-      if (!s) { toast('Seriál teď na tvých službách není, díl ' + epLabel(ep.season_number, ep.episode_number) + ' jsem si poznamenal.'); return; }
+      if (!s) { toast('Seriál nyní není ve vybraných službách. Díl ' + epLabel(ep.season_number, ep.episode_number) + ' byl označen.'); return; }
       playTitle(s, item);
       toast('Otevírám ' + s.name + ' – pusť díl ' + epLabel(ep.season_number, ep.episode_number) + (ep.name ? ' „' + ep.name + '"' : ''));
     }
@@ -2650,7 +2650,7 @@
       });
       clear(listWrap);
       listWrap.scrollTop = 0;
-      listWrap.appendChild(h('div', { class: 'sinfo', text: 'Načítám díly…' }));
+      listWrap.appendChild(h('div', { class: 'sinfo', text: 'Načítání dílů…' }));
       tmdb('/tv/' + item.id + '/season/' + n).then(function (d) {
         if (curSeason !== n) return;
         clear(listWrap);
@@ -2672,7 +2672,7 @@
           el._select = function () { play(ep); };
           listWrap.appendChild(el);
         });
-        if (!(d.episodes || []).length) listWrap.appendChild(h('div', { class: 'sinfo', text: 'K téhle sérii nejsou díly.' }));
+        if (!(d.episodes || []).length) listWrap.appendChild(h('div', { class: 'sinfo', text: 'K této sérii nejsou k dispozici díly.' }));
         listWrap.appendChild(h('div', { style: 'height:200px' }));
         var nextEl = markList();
         if (focusEpisodes) setFocus(nextEl || listWrap.querySelector('.ep'));
@@ -2723,8 +2723,8 @@
     wrap.appendChild(sc);
     root.appendChild(wrap);
     root.appendChild(h('div', { class: 'side-help' }, [
-      MOBILE ? 'Šipkami ▲▼ posuneš řádek nahoru nebo dolů.' : 'OK vezme řádek, šipkami nahoru a dolů ho posuneš, dalším OK ho položíš.', h('br'), h('br'),
-      'Vypnuté řádky zapneš v Nastavení → Obsah. Řádek „Přibylo na tvých službách" je vždy nahoře.'
+      MOBILE ? 'Šipkami ▲▼ se řádek posouvá nahoru nebo dolů.' : 'OK vybere řádek, šipkami nahoru a dolů se posouvá, dalším OK se umístí.', h('br'), h('br'),
+      'Vypnuté řádky lze zapnout v Nastavení → Obsah. Řádek „Nově ve vybraných službách" je vždy nahoře.'
     ]));
     var names = {};
     rowDefs().forEach(function (d) { names[d.id] = d.name; });
@@ -2776,13 +2776,13 @@
   defineScreen('hiddenlist', function (root) {
     clear(root);
     root.appendChild(topbar([]));
-    var wrap = h('div', { class: 'picker' }, [h('h2', { text: 'Skryté a viděné tituly' })]);
+    var wrap = h('div', { class: 'picker' }, [h('h2', { text: 'Skryté a zhlédnuté tituly' })]);
     var sc = h('div', { class: 'vscroll' });
     wrap.appendChild(sc);
     root.appendChild(wrap);
-    root.appendChild(h('div', { class: 'side-help', text: 'OK vrátí titul zpátky do nabídky. Viděné seriály Videotéka dál hlídá a ukáže ti jejich nové díly.' }));
+    root.appendChild(h('div', { class: 'side-help', text: 'OK vrátí titul zpět do nabídky. U zhlédnutých seriálů Videotéka dál sleduje a zobrazuje nové díly.' }));
     var keys = Object.keys(hiddenItems).sort(function (a, b) { return hiddenItems[b].t - hiddenItems[a].t; });
-    if (!keys.length) sc.appendChild(h('div', { class: 'sinfo', text: 'Nemáš žádné skryté tituly.' }));
+    if (!keys.length) sc.appendChild(h('div', { class: 'sinfo', text: 'Žádné tituly nejsou skryté.' }));
     keys.forEach(function (k) {
       var e = hiddenItems[k];
       var el = h('div', { class: 'pitem focusable', 'data-fid': 'h-' + k },
@@ -2794,7 +2794,7 @@
         toast('Vráceno: ' + e.title);
         focused = null;
         if (next && next.classList.contains('pitem')) setFocus(next);
-        else { sc.insertBefore(h('div', { class: 'sinfo', text: 'Nemáš žádné skryté tituly.' }), sc.firstChild); }
+        else { sc.insertBefore(h('div', { class: 'sinfo', text: 'Žádné tituly nejsou skryté.' }), sc.firstChild); }
       };
       sc.appendChild(el);
     });

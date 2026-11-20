@@ -1,7 +1,7 @@
 {
-  "version": "1.25.0",
+  "version": "1.26.0",
   "minShell": 1,
-  "notes": "Nastavení je přehledně rozdělené do karet Obsah, Služby, Klíče, Televize/Telefon a Aplikace.",
+  "notes": "Texty v neutrálním tónu, kalendář bez zbytečného označení „přibude\".",
   "files": [
     "css/style.css",
     "js/services.js",
