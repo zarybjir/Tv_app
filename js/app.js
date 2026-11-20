@@ -375,7 +375,7 @@
     var c = content(), t = [];
     if (c.series && (!cat || cat.tv)) t.push('seriály');
     if (c.movies && (!cat || cat.movie)) t.push('filmy');
-    return t.join(' a ');
+    return t.length === 1 ? 'pouze ' + t[0] : '';
   }
   function allProviders() {
     var out = [];
@@ -812,7 +812,7 @@
   function ratingChips(r) {
     var out = [];
     if (r && r.imdb != null) out.push(h('span', { class: 'rchip imdb', text: 'IMDb ' + dec(r.imdb, 1) }));
-    if (r && r.rt != null) out.push(h('span', { class: 'rchip ' + (r.rt >= 60 ? 'rt-fresh' : 'rt-rotten'), text: 'RT ' + r.rt + ' %' }));
+    if (r && r.rt != null) out.push(h('span', { class: 'rchip ' + (r.rt >= 60 ? 'rt-fresh' : 'rt-rotten'), text: 'RT ' + r.rt + '\u202f%' }));
     return out;
   }
   function fillRatings(cardEl, item) {
@@ -1354,7 +1354,7 @@
         r.appendChild(cEl);
         if (!x.t.base) markAvailability(cEl, x.t.item);
       });
-      slot.appendChild(row('Nové díly a řady', 'seriály ze seznamu Chci vidět a zhlédnuté seriály · zelené tlačítko = nové díly zhlédnuty', r));
+      slot.appendChild(row('Nové díly a řady', null, r));
       restorePendingFocus();
       reapplyHomeScroll();
     });
@@ -1396,7 +1396,7 @@
         arrivals.unshift(f);
       });
       save('arrivals', arrivals);
-      toast('Nově ve vybraných službách: ' + found.map(function (f) {
+      toast('Nově dostupné: ' + found.map(function (f) {
         var w = watchlist.filter(function (x) { return x.key === f.key; })[0];
         return w ? w.title : '';
       }).join(', '));
@@ -1424,7 +1424,7 @@
         setFocus(focusablesIn(currentScreen.el)[0]);
       } }, [h('div', { class: 'poster' }, [h('div', { class: 'ph', text: '✓ Skrýt upozornění' })])]);
     r.appendChild(done);
-    slot.appendChild(row('Nově ve vybraných službách', 'ze seznamu Chci vidět', r));
+    slot.appendChild(row('Nově dostupné ze seznamu Chci vidět', null, r));
   }
 
   // ------------------------------------------------------------------ pořadí řádků
@@ -1512,7 +1512,7 @@
     });
     var leavingWl = watchlist.filter(function (w) { return leavingTs(w.key); });
     if (leavingWl.length) body.appendChild(leavingBanner(leavingWl));
-    body.appendChild(row('Služby', MOBILE ? 'klepnutím se spustí aplikace' : 'OK spustí aplikaci · na plakátu: červené tlačítko = skrýt, zelené = zhlédnuto', tiles));
+    body.appendChild(row('Služby', null, tiles));
     if (!CFG.tmdbKey && MOBILE) {
       body.appendChild(h('div', { class: 'banner focusable', 'data-fid': 'need-keys', onselect: function () { settingsTab = 'klice'; go('settings'); } },
         [h('b', { text: 'Videotéka potřebuje klíč TMDB. ' }), 'Klíč je zdarma. Klepnutím se otevře Nastavení → Klíče s odkazem a postupem u každého klíče.']));
@@ -1597,16 +1597,16 @@
       }
       if (!canDiscover || !isRowOn(id)) return;
       if (id === 'leaving') {
-        if (CFG.motnKey) addRow('Brzy odchází', 'z katalogu vybraných služeb, nejbližší první', 'leave-', { providers: providers, changes: 'expiring' });
+        if (CFG.motnKey) addRow('Brzy odchází', null, 'leave-', { providers: providers, changes: 'expiring' });
         return;
       }
       if (id === 'newest' && CFG.motnKey) {
-        addRow('Nově přidáno', 'tituly nově přidané do katalogu vybraných služeb', 'new-', { providers: providers, changes: 'new' });
+        addRow('Nově přidáno', null, 'new-', { providers: providers, changes: 'new' });
         return;
       }
       if (id === 'newest') {
         var day = function (n) { return new Date(Date.now() - n * DAY).toISOString().slice(0, 10); };
-        addRow('Nově přidáno', 'nové filmy a seriály s novými díly ve vybraných službách', 'new-', {
+        addRow('Nově přidáno', null, 'new-', {
           providers: providers, movie: '', tv: '',
           extraMovie: { 'primary_release_date.gte': day(120), 'primary_release_date.lte': day(0), 'vote_count.gte': 5 },
           extraTv: { 'air_date.gte': day(30), 'air_date.lte': day(0) },
@@ -1614,7 +1614,7 @@
         });
         return;
       }
-      if (id === 'trending') { addRow('Nejpopulárnější ve vybraných službách', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '', mOrder: 'popularity_1month' }); return; }
+      if (id === 'trending') { addRow('Nejpopulárnější', typesLabel(), 'tr-', { providers: providers, movie: '', tv: '', mOrder: 'popularity_1month' }); return; }
       if (id === 'byService') {
         enabledServices().forEach(function (s) {
           addRow('Populární na ' + s.name, typesLabel(), 'pop-' + s.id + '-', { providers: s.providers, movie: '', tv: '', services: [s.id] }, [s.id]);
@@ -1828,7 +1828,7 @@
     var loading = h('div', { class: 'also', text: 'Zjišťování dostupnosti…' });
     var epBtn = null;
     if (MOBILE && validCode(load('tvCode', ''))) {
-      actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: '📺 Poslat do TV', onselect: function () { sendToTv(item); } }));
+      actions.appendChild(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-send', text: 'Poslat do TV', onselect: function () { sendToTv(item); } }));
     }
     if (item.type === 'tv' && CFG.tmdbKey) {
       var pr = progress[item.key];
@@ -2018,13 +2018,13 @@
     // ---------------------------------------------------------------- Obsah
     if (settingsTab === 'obsah') {
       var c = content();
-      add(scard('Typ obsahu', 'Co se má na domovské obrazovce zobrazovat.', [
+      add(scard('Typ obsahu', null, [
         sline(null, [
           chip('set-c-series', 'Seriály', c.series, function () { return (c.series = !c.series); }),
           chip('set-c-movies', 'Filmy', c.movies, function () { return (c.movies = !c.movies); })
         ])
       ]));
-      add(scard('Řádky', 'Souhrnné řádky nad kategoriemi a jejich pořadí.', [
+      add(scard('Řádky', null, [
         sline(null, [
           chip('set-c-new', 'Nově přidáno', c.newest, function () { return (c.newest = !c.newest); }),
           CFG.motnKey ? chip('set-c-leave', 'Brzy odchází', c.leaving !== false, function () { return (c.leaving = c.leaving === false); }) : null,
@@ -2033,12 +2033,12 @@
         ]),
         sline(null, [sbtn('set-order', 'Změnit pořadí řádků ›', function () { go('order'); })])
       ]));
-      add(scard('Kategorie', 'Žánrové řádky na domovské obrazovce.', [
+      add(scard('Kategorie', null, [
         sline(null, CATEGORIES.filter(function (cat) { return !cat.parent; }).map(function (cat) {
           return chip('set-cat-' + cat.id, cat.name, c.cats[cat.id], function () { return (c.cats[cat.id] = !c.cats[cat.id]); });
         }))
       ]));
-      add(scard('Dokumenty', 'Podkategorie, mezi kterými lze v kategorii Dokumenty přepínat.', [
+      add(scard('Podkategorie dokumentů', null, [
         sline(null, CATEGORIES.filter(function (cat) { return cat.parent === 'dokumenty'; }).map(function (cat) {
           return chip('set-cat-' + cat.id, cat.short, c.cats[cat.id], function () { return (c.cats[cat.id] = !c.cats[cat.id]); });
         }))
@@ -2198,6 +2198,7 @@
         sstat('Skok na titul (Watchmode)', CFG.watchmodeKey ? 'zapnuto, uloženo ' + Object.keys(linkCache).length + ' odkazů' : 'chybí klíč', !!CFG.watchmodeKey),
         sstat(IS_TV ? 'Aplikace v televizi' : ANDROID ? 'Aplikace v telefonu' : 'Prostředí', IS_TV || ANDROID ? 'nalezeno ' + installedApps.length : 'náhled v prohlížeči', true)
       ]));
+      add(h('div', { class: 'sattrib', text: 'Videotéka používá TMDB API, ale není schválena ani certifikována společností TMDB. Data o dostupnosti poskytuje JustWatch prostřednictvím TMDB.' }));
     }
 
     wrap.appendChild(h('div', { style: 'height:' + (MOBILE ? 40 : 160) + 'px' }));
@@ -2724,7 +2725,7 @@
     root.appendChild(wrap);
     root.appendChild(h('div', { class: 'side-help' }, [
       MOBILE ? 'Šipkami ▲▼ se řádek posouvá nahoru nebo dolů.' : 'OK vybere řádek, šipkami nahoru a dolů se posouvá, dalším OK se umístí.', h('br'), h('br'),
-      'Vypnuté řádky lze zapnout v Nastavení → Obsah. Řádek „Nově ve vybraných službách" je vždy nahoře.'
+      'Vypnuté řádky lze zapnout v Nastavení → Obsah. Řádek „Nově dostupné ze seznamu Chci vidět" je vždy nahoře.'
     ]));
     var names = {};
     rowDefs().forEach(function (d) { names[d.id] = d.name; });
