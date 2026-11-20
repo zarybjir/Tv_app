@@ -1,7 +1,7 @@
 {
-  "version": "1.28.0",
+  "version": "1.28.1",
   "minShell": 1,
-  "notes": "Nová ikona aplikace (v telefonu po instalaci nového APK).",
+  "notes": "Opraveno: na domovské obrazovce se znovu zobrazují kategorie.",
   "files": [
     "css/style.css",
     "js/services.js",

@@ -371,10 +371,16 @@
     CATEGORIES.forEach(function (cat) { if (c.cats[cat.id] === undefined) c.cats[cat.id] = cat.on; });
     return c;
   }
-  function typesLabel(cat) {
+  // které typy obsahu kategorie zobrazí (podle nastavení a toho, co kategorie umí)
+  function typesFor(cat) {
     var c = content(), t = [];
     if (c.series && (!cat || cat.tv)) t.push('seriály');
     if (c.movies && (!cat || cat.movie)) t.push('filmy');
+    return t;
+  }
+  // podtitulek řádku: jen když se zobrazuje jediný typ
+  function typesLabel(cat) {
+    var t = typesFor(cat);
     return t.length === 1 ? 'pouze ' + t[0] : '';
   }
   function allProviders() {
@@ -1622,7 +1628,7 @@
         return;
       }
       var cat = CATEGORIES.filter(function (x) { return 'cat:' + x.id === id; })[0];
-      if (cat && typesLabel(cat)) {
+      if (cat && typesFor(cat).length) {
         // dokumenty a jejich podkategorie mají v rozbalené mřížce záložky
         var fam = cat.parent || (CATEGORIES.some(function (x) { return x.parent === cat.id; }) ? cat.id : null);
         var tabs = null;
