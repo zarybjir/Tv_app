@@ -877,7 +877,11 @@
       }
       var id = ids[i++];
       try {
-        if (mode === 'plain') window.tizen.application.launch(id, ok, function (e) { fail(id, e); });
+        if (mode === 'hide') {
+          // Videotéku nejdřív schovej, ať spuštěná aplikace dostane obrazovku i fokus
+          try { window.tizen.application.getCurrentApplication().hide(); } catch (e2) { /* nic */ }
+          setTimeout(function () { window.tizen.application.launch(id, ok, function (e) { fail(id, e); }); }, 400);
+        } else if (mode === 'plain') window.tizen.application.launch(id, ok, function (e) { fail(id, e); });
         else window.tizen.application.launchAppControl(launchControl(mode), id, ok, function (e) { fail(id, e); }, null);
       } catch (e) { fail(id, e); }
     }
@@ -899,9 +903,9 @@
 
   // Způsob spuštění aplikace služby (kdyby některá služba potřebovala jiný).
   // Netflix je na Samsungu systémová aplikace org.tizen.netflix-app.
-  var LAUNCH_MODES = ['plain', 'control', 'payload'];
-  var LAUNCH_DEFAULT = {};
-  var LAUNCH_LABEL = { plain: 'způsob 1', control: 'způsob 2', payload: 'způsob 3' };
+  var LAUNCH_MODES = ['plain', 'control', 'payload', 'hide'];
+  var LAUNCH_DEFAULT = { hbo: 'hide' };
+  var LAUNCH_LABEL = { plain: 'způsob 1', control: 'způsob 2', payload: 'způsob 3', hide: 'způsob 4' };
   function launchMode(service) {
     var m = svcSettings(service).launchMode;
     return LAUNCH_MODES.indexOf(m) >= 0 ? m : (LAUNCH_DEFAULT[service.id] || 'plain');

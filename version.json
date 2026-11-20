@@ -1,6 +1,6 @@
 {
-  "version": "1.21.1",
+  "version": "1.22.0",
   "minShell": 1,
-  "notes": "Nové způsoby skoku na film v Netflixu; Videotéka se po spuštění služby zavírá až po 5 vteřinách.",
+  "notes": "HBO Max: nový způsob spuštění (Videotéka se před spuštěním schová).",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }
