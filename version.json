@@ -1,6 +1,6 @@
 {
-  "version": "1.22.2",
+  "version": "1.22.3",
   "minShell": 1,
-  "notes": "Oprava: HBO Max se spouštělo jako stará aplikace HBO GO.",
+  "notes": "Drobné úpravy spouštění služeb v televizi.",
   "files": ["css/style.css", "js/services.js", "js/qrcode.js", "js/app.js"]
 }

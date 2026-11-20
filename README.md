@@ -225,6 +225,28 @@ v `js/config.js` nezůstal vyplněný klíč.
 > ⚠️ Repozitář je veřejný. Klíče vyplňuj jen v kopii, kterou nahráváš do televize,
 > a necommituj je.
 
+## Starší televize (2016–2017): když instalace končí `install failed[118]`
+
+Ověřeno na Samsung UE55MU6272 (2017, Tizen 3.0):
+
+1. Použij **Tizen Studio 6.1** (z `download.tizen.org/sdk/Installer/tizen-studio_6.1/`, soubor
+   `web-ide…windows-64.exe`). Nové rozšíření pro VS Code tuhle televizi nezvládlo.
+2. V Device Manageru klikni na televizi pravým tlačítkem → **Permit to install applications**.
+   Pokud to nepomůže, vytvoř v Certificate Manageru profil typu **Tizen** (ne Samsung)
+   s výchozím distributorem (Public).
+3. Ze složky projektu smaž `js/jsqr.js` a `js/jsqr.LICENSE.txt` (televize je nepotřebuje),
+   pak **Build Signed Package**.
+4. Instaluj z příkazové řádky (`C:\tizen-studio\tools`), každý řádek zvlášť:
+   ```
+   sdb.exe -s <IP-televize>:26101 install "C:\…\Videoteka.wgt"
+   sdb.exe -s <IP-televize>:26101 shell 0 vd_appinstall PrMtArNa01.Videoteka /home/owner/share/tmp/sdk_tools/Videoteka.wgt
+   ```
+   Hláška „closed" po prvním příkazu nevadí, instaluje až druhý.
+5. Při každé další instalaci použij **stejný certifikát**, jinak ji televize odmítne.
+
+Na této televizi se Netflix spouští jako systémová aplikace `org.tizen.netflix-app` a skok rovnou
+na film služby nepřijímají. Videotéka proto službu otevře a napíše, jaký titul v ní vyhledat.
+
 ## 3. Když nejde spustit některá služba
 
 Videotéka hledá aplikace v televizi podle názvu. Když některou nenajde (na dlaždici je

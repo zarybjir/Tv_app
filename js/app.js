@@ -907,7 +907,7 @@
   // Způsob spuštění aplikace služby (kdyby některá služba potřebovala jiný).
   // Netflix je na Samsungu systémová aplikace org.tizen.netflix-app.
   var LAUNCH_MODES = ['plain', 'control', 'payload', 'hide'];
-  var LAUNCH_DEFAULT = { hbo: 'hide' };
+  var LAUNCH_DEFAULT = {};
   var LAUNCH_LABEL = { plain: 'způsob 1', control: 'způsob 2', payload: 'způsob 3', hide: 'způsob 4' };
   function launchMode(service) {
     var m = svcSettings(service).launchMode;
