@@ -1,2 +1,2 @@
 // Verze aplikace přibalená v instalaci. Při změně zvyš i version.json v kořeni repozitáře.
-window.PROMITARNA_BUNDLED = '1.28.1';
+window.PROMITARNA_BUNDLED = '1.29.0';

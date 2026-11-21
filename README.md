@@ -30,9 +30,12 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
 
 ## Funkce
 
-- Kategorie podle žánrů, obsahující pouze tituly z vybraných služeb
+- Kategorie podle žánrů, obsahující pouze tituly z vybraných služeb, s řazením podle
+  popularity, hodnocení nebo data vydání
+- Řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy a Klasika
+- Doporučení podle seznamu Chci vidět a zhlédnutých titulů
 - Hodnocení IMDb a Rotten Tomatoes s filtrem podle hodnocení
-- Filtr české tvorby a českého dabingu
+- Filtr podle období vydání, české tvorby a českého dabingu
 - Nově přidané a brzy odcházející tituly, kalendář nových dílů
 - Seznam Chci vidět, skrývání zhlédnutých a nezajímavých titulů
 - Přímé otevření titulu v aplikaci služby (Android)

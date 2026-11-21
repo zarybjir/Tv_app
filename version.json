@@ -1,7 +1,7 @@
 {
-  "version": "1.28.1",
+  "version": "1.29.0",
   "minShell": 1,
-  "notes": "Opraveno: na domovské obrazovce se znovu zobrazují kategorie.",
+  "notes": "Nové řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy, Klasika a Doporučené; řazení v kategoriích a filtr Roky.",
   "files": [
     "css/style.css",
     "js/services.js",
