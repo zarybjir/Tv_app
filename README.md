@@ -34,6 +34,7 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
   popularity, hodnocení nebo data vydání
 - Řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy a Klasika
 - Doporučení podle seznamu Chci vidět a zhlédnutých titulů
+- Detail titulu se žánry, délkou, zemí původu a možností zobrazit anglický popis
 - Hodnocení IMDb a Rotten Tomatoes s filtrem podle hodnocení
 - Filtr podle období vydání, české tvorby a českého dabingu
 - Nově přidané a brzy odcházející tituly, kalendář nových dílů

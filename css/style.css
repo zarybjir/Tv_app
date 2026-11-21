@@ -566,3 +566,27 @@ html.mobile, html.mobile body { width: 100%; height: 100%; font-size: 16px; }
 .mobile .ssave { margin: 2px 0 14px; }
 .mobile .ssave .btn { font-size: 15px; padding: 11px 22px; width: 100%; text-align: center; }
 .mobile .sattrib { font-size: 11px; line-height: 16px; margin: 4px 2px 14px; }
+
+/* ---------- detail: žánry, motto, přepnutí popisu ---------- */
+.dgenres { margin-top: 18px; }
+.dgenres span { display: inline-block; font-size: 22px; color: #c9cfdb; padding: 6px 18px; margin: 0 10px 8px 0; border-radius: 20px; border: 1px solid #3a4356; }
+.tagline { margin-top: 20px; font-size: 26px; font-style: italic; color: #c9cfdb; }
+.tagline:empty { display: none; }
+.ovnote { margin-top: 10px; }
+.ovnote .btn.ovswitch { font-size: 20px; padding: 8px 18px; margin: 0; font-weight: 600; background: none; color: #ffcc4d; box-shadow: none; }
+.ovnote .btn.ovswitch.focus { background: #ffffff; color: #000; }
+.ovlabel { font-size: 20px; color: #9aa3b5; }
+.listctl .ctlsep { display: inline-block; width: 1px; height: 40px; background: #2c3546; margin: 0 22px 0 8px; vertical-align: middle; }
+.mobile .dgenres { margin-top: 8px; }
+.mobile .dgenres span { font-size: 12px; padding: 3px 10px; margin: 0 6px 6px 0; border-radius: 12px; }
+.mobile .tagline { margin-top: 10px; font-size: 14px; }
+.mobile .ovnote { margin-top: 4px; }
+.mobile .ovnote .btn.ovswitch, .mobile .ovnote .btn.ovswitch.focus { font-size: 13px; padding: 4px 0; background: none; color: #ffcc4d; }
+.mobile .ovlabel { font-size: 12px; }
+.mobile .listctl .ctlsep { height: 22px; margin: 0 10px 0 4px; }
+
+/* tlačítko Nahoru (mobil) */
+.totop { position: fixed; right: 16px; bottom: 22px; z-index: 50; padding: 10px 16px; border-radius: 22px; background: #ffcc4d; color: #000; font-size: 14px; font-weight: 700; box-shadow: 0 6px 18px rgba(0,0,0,.5); opacity: 0; transform: translateY(12px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.totop.show { opacity: 1; transform: none; pointer-events: auto; }
+.mobile .gridtabs.listctl { white-space: normal; overflow: visible; }
+.mobile .listctl .ctlsep { display: block; width: 0; height: 0; margin: 0; }

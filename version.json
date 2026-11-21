@@ -1,7 +1,7 @@
 {
-  "version": "1.29.0",
+  "version": "1.30.0",
   "minShell": 1,
-  "notes": "Nové řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy, Klasika a Doporučené; řazení v kategoriích a filtr Roky.",
+  "notes": "Detail titulu se žánry a anglickým popisem, návrat na pozici ve všech seznamech, filtry a řazení v rozbalených seznamech, tlačítko Nahoru.",
   "files": [
     "css/style.css",
     "js/services.js",

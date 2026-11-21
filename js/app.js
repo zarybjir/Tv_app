@@ -241,7 +241,7 @@
   function go(name, params, opts) {
     opts = opts || {};
     if (currentScreen) currentScreen.scrollState = captureScroll(currentScreen.el);
-    if (currentScreen && !opts.replace) history.push({ name: currentScreen.name, params: currentScreen.params, lastFocus: currentScreen.lastFocus });
+    if (currentScreen && !opts.replace) history.push({ name: currentScreen.name, params: currentScreen.params, lastFocus: currentScreen.lastFocus, renderId: currentScreen.renderId });
     show(name, params, null);
   }
 
@@ -249,6 +249,7 @@
     Object.keys(screens).forEach(function (k) { screens[k].el.classList.remove('active'); });
     var s = screens[name];
     s.onKey = null;
+    s.renderId = (s.renderId || 0) + 1;
     currentScreen = s;
     s.params = params;
     s.el.classList.add('active');
@@ -258,15 +259,19 @@
     var target = (restoreFocus && document.body.contains(restoreFocus)) ? restoreFocus : initial;
     if (!target || !document.body.contains(target)) target = focusablesIn(s.el)[0];
     setFocus(target);
+    updateToTop();
   }
 
+  var LIST_SCREENS = ['search', 'grid', 'person', 'calendar'];
   function back() {
     if (!history.length) { exitApp(); return; }
     var prev = history.pop();
-    if (prev.name === 'search') {
-      // hledání se nepřekresluje – zůstanou výsledky i pozice
-      reactivate('search', prev.lastFocus);
+    var ps = screens[prev.name];
+    if (LIST_SCREENS.indexOf(prev.name) >= 0 && ps.renderId === prev.renderId && ps.el.firstChild) {
+      // seznamy se nepřekreslují – zůstane načtený obsah i pozice
+      reactivate(prev.name, prev.lastFocus);
       Array.prototype.slice.call(currentScreen.el.querySelectorAll('.card[data-key]')).forEach(markHidden);
+      updateToTop();
       return;
     }
     if (prev.name === 'home' && !homeDirty && screens.home.el.firstChild) {
@@ -289,6 +294,32 @@
       else currentScreen.pendingFid = fid; // řádek se ještě načítá
     }
   }
+
+  // tlačítko Nahoru: v mobilu se ukáže, když je seznam posunutý hodně dolů
+  var toTopBtn = null, toTopTarget = null;
+  function scrollerOf(scr) {
+    var vs = scr && scr.el.querySelectorAll('.vscroll');
+    var best = null;
+    Array.prototype.forEach.call(vs || [], function (v) { if (!best || v.scrollHeight - v.clientHeight > best.scrollHeight - best.clientHeight) best = v; });
+    return best;
+  }
+  function updateToTop() {
+    if (!MOBILE) return;
+    if (!toTopBtn) {
+      toTopBtn = h('div', { class: 'totop', text: '↑ Nahoru' });
+      toTopBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var t = toTopTarget || scrollerOf(currentScreen);
+        if (t) { try { t.scrollTo({ top: 0, behavior: 'smooth' }); } catch (x) { t.scrollTop = 0; } }
+        toTopBtn.classList.remove('show');
+      });
+      document.body.appendChild(toTopBtn);
+    }
+    var t = scrollerOf(currentScreen);
+    toTopTarget = t;
+    toTopBtn.classList.toggle('show', !!t && t.scrollTop > 900 && currentScreen.name !== 'settings');
+  }
+  document.addEventListener('scroll', function () { updateToTop(); }, true);
 
   function exitApp() {
     if (ANDROID) { ANDROID.exit(); return; }
@@ -1575,7 +1606,7 @@
 
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
-  function filterPill(kind) {
+  function filterPill(kind, onChange) {
     var steps = kind === 'imdb' ? IMDB_STEPS : kind === 'period' ? PERIOD_STEPS : kind === 'cz' ? (CFG.motnKey ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
     function label() {
       var v = filt()[kind];
@@ -1593,8 +1624,10 @@
         save('settings', settings);
         el.textContent = label();
         el.classList.toggle('on', !!filt()[kind]);
-        // překresli řádky, až se přestane mačkat
+        homeDirty = true;
+        // překresli, až se přestane mačkat
         clearTimeout(refreshTimer);
+        if (onChange) { refreshTimer = setTimeout(onChange, 700); return; }
         refreshTimer = setTimeout(function () {
           if (currentScreen !== screens.home) return;
           var fid = focused && focused.getAttribute('data-fid');
@@ -1605,6 +1638,29 @@
       }
     });
     return el;
+  }
+
+  // řádek s řazením a filtry pro rozbalené seznamy
+  var SORTS = [['popular', 'Populární'], ['rating', 'Nejlépe hodnocené'], ['newest', 'Nejnovější']];
+  function listControls(opt) {
+    var bar = h('div', { class: 'gridtabs listctl' });
+    if (opt.sorts) {
+      var pills = [];
+      opt.sorts.forEach(function (sd) {
+        var el = h('div', { class: 'pill focusable' + (opt.sort() === sd[0] ? ' on' : ''), 'data-fid': 'sort-' + sd[0], text: sd[1] });
+        el._select = function () {
+          if (opt.sort() === sd[0]) return;
+          pills.forEach(function (x) { x.classList.remove('on'); });
+          el.classList.add('on');
+          opt.onSort(sd[0]);
+        };
+        pills.push(el);
+        bar.appendChild(el);
+      });
+      bar.appendChild(h('span', { class: 'ctlsep' }));
+    }
+    ['imdb', 'rt', 'period', 'cz'].forEach(function (k) { bar.appendChild(filterPill(k, opt.onFilter)); });
+    return bar;
   }
 
   defineScreen('home', function (root) {
@@ -1937,12 +1993,54 @@
       }).catch(function () {});
     }
     var titleEl = h('h1', { text: item.title });
-    fixTitle(item, function (t) { titleEl.textContent = t; var ov = info.querySelector('.overview'); if (ov && !ov.textContent) ov.textContent = item.overview || ''; });
+    var genresEl = h('div', { class: 'dgenres' });
+    var taglineEl = h('div', { class: 'tagline' });
+    var ovEl = h('div', { class: 'overview', text: item.overview || '' });
+    var ovNote = h('div', { class: 'ovnote' });
+    fixTitle(item, function (t) { titleEl.textContent = t; if (!ovEl.textContent) ovEl.textContent = item.overview || ''; });
+    if (CFG.tmdbKey) {
+      Promise.all([
+        tmdb('/' + item.type + '/' + item.id),
+        tmdb('/' + item.type + '/' + item.id, { language: 'en-US' }).catch(function () { return null; })
+      ]).then(function (r) {
+        var d = r[0] || {}, en = r[1] || {};
+        (d.genres || []).slice(0, 4).forEach(function (g) { genresEl.appendChild(h('span', { text: g.name })); });
+        var facts = [];
+        if (item.type === 'movie' && d.runtime) facts.push(d.runtime >= 60 ? Math.floor(d.runtime / 60) + ' h ' + (d.runtime % 60) + ' min' : d.runtime + ' min');
+        if (item.type === 'tv' && d.number_of_seasons) {
+          var n = d.number_of_seasons;
+          facts.push(n + (n === 1 ? ' řada' : n < 5 ? ' řady' : ' řad'));
+          if (d.episode_run_time && d.episode_run_time[0]) facts.push('díl ' + d.episode_run_time[0] + ' min');
+        }
+        var ctr = (d.production_countries || []).slice(0, 2).map(function (c) { return c.name; });
+        if (ctr.length) facts.push(ctr.join(', '));
+        var orig = d.original_title || d.original_name;
+        if (orig && orig !== item.title && !NON_LATIN.test(orig)) facts.push('původní název ' + orig);
+        if (facts.length) metaEl.firstChild.textContent = meta.concat(facts).join(' · ');
+        if (d.tagline) taglineEl.textContent = d.tagline;
+        // český popis bývá krátký nebo strojový – nabídni anglický originál
+        var cs = (d.overview || item.overview || '').trim(), eo = (en.overview || '').trim();
+        if (!eo || eo === cs) return;
+        var showEn = cs.length < 80;
+        if (!cs) { ovEl.textContent = eo; ovNote.appendChild(h('span', { class: 'ovlabel', text: 'Popis je k dispozici pouze v angličtině.' })); return; }
+        var sw = h('div', { class: 'btn ovswitch focusable', 'data-fid': 'd-ovlang' });
+        var apply = function () {
+          ovEl.textContent = showEn ? eo : cs;
+          sw.textContent = showEn ? 'Popis v češtině' : 'Popis v angličtině';
+        };
+        sw._select = function () { showEn = !showEn; apply(); };
+        apply();
+        ovNote.appendChild(sw);
+      }).catch(function () {});
+    }
     var info = h('div', { class: 'detail-info' }, [
       titleEl,
       metaEl,
+      genresEl,
       ratingsEl,
-      h('div', { class: 'overview', text: item.overview || '' }),
+      taglineEl,
+      ovEl,
+      ovNote,
       peopleEl,
       h('h3', { text: 'Kde sledovat' }),
       actions
@@ -2380,24 +2478,15 @@
       });
       sc.appendChild(tabsEl);
     }
-    // řazení: jen u běžných kategorií (ne u změn katalogu, doporučení, Oscarů a skrytých klenotů)
+    // řazení jen u běžných kategorií (ne u změn katalogu, doporučení, Oscarů a skrytých klenotů); filtry všude
     var o = params.opts;
-    if (!o.changes && !o.recs && !o.awards && o.sort !== 'gems') {
-      var sortEl = h('div', { class: 'gridtabs gridsort' });
-      [['popular', 'Populární'], ['rating', 'Nejlépe hodnocené'], ['newest', 'Nejnovější']].forEach(function (sd) {
-        if (o.classic && sd[0] === 'newest') return;
-        var el = h('div', { class: 'pill focusable' + (curSort === sd[0] ? ' on' : ''), 'data-fid': 'sort-' + sd[0], text: sd[1] });
-        el._select = function () {
-          if (curSort === sd[0]) return;
-          Array.prototype.forEach.call(sortEl.children, function (x) { x.classList.remove('on'); });
-          el.classList.add('on');
-          curSort = sd[0];
-          reload();
-        };
-        sortEl.appendChild(el);
-      });
-      sc.appendChild(sortEl);
-    }
+    var canSort = !o.changes && !o.recs && !o.awards && o.sort !== 'gems';
+    sc.appendChild(listControls({
+      sorts: canSort ? SORTS.filter(function (sd) { return !(o.classic && sd[0] === 'newest'); }) : null,
+      sort: function () { return curSort; },
+      onSort: function (v) { curSort = v; reload(); },
+      onFilter: function () { if (currentScreen === screens.grid) reload(); }
+    }));
     sc.appendChild(grid);
     sc.appendChild(status);
     root.appendChild(sc);
@@ -2751,21 +2840,56 @@
       });
       list.sort(function (a, b) { return b.pop - a.pop; });
       list = list.slice(0, 60);
-      var found = 0, done = 0;
+      var found = 0, done = 0, avail = [], mineOf = {}, sort = 'popular', finished = false;
+      // seřaď a vyfiltruj nalezené tituly a vykresli je znovu (fokus zůstane na stejném titulu)
+      function redraw() {
+        var items = avail.slice();
+        if (sort === 'rating') items.sort(function (a, b) { return b.vote - a.vote; });
+        else if (sort === 'newest') items.sort(function (a, b) { return (b.year || '0') > (a.year || '0') ? 1 : -1; });
+        else items.sort(function (a, b) { return b.pop - a.pop; });
+        return applyFilter(items).then(function (res) {
+          if (currentScreen !== screens.person) return;
+          var fk = focused && focused.getAttribute('data-key');
+          clear(grid);
+          res.items.forEach(function (it) {
+            var c = card(it, 'pc-' + it.key);
+            setBadges(c, mineOf[it.key]);
+            grid.appendChild(c);
+          });
+          var again = fk && grid.querySelector('.card[data-key="' + fk + '"]');
+          if (again) setFocus(again);
+          else if (grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
+          if (finished) {
+            status.textContent = !found ? 'Ve vybraných službách nyní není žádný titul.'
+              : res.items.length ? 'Ve vybraných službách: ' + titulu(res.items.length) + (res.hidden ? ' (filtr skryl ' + res.hidden + ')' : '') + '.'
+              : 'Nic nesplňuje filtr ' + filterLabel() + '.';
+          }
+        });
+      }
+      sc.insertBefore(listControls({
+        sorts: SORTS, sort: function () { return sort; },
+        onSort: function (v) { sort = v; redraw(); },
+        onFilter: function () { redraw(); }
+      }), grid);
       return Promise.all(list.map(function (it) {
         return enqueue(function () { return providersFor(it); }).then(function (res) {
           done++;
           if (res.mine.length && !isHidden(it)) {
             found++;
-            var c = card(it, 'pc-' + it.key);
-            setBadges(c, res.mine);
-            grid.appendChild(c);
-            if (found === 1 && currentScreen === screens.person && (!focused || !document.body.contains(focused))) setFocus(c);
+            avail.push(it);
+            mineOf[it.key] = res.mine;
+            if (!anyFilter()) {
+              var c = card(it, 'pc-' + it.key);
+              setBadges(c, res.mine);
+              grid.appendChild(c);
+              if (found === 1 && currentScreen === screens.person && (!focused || !document.body.contains(focused))) setFocus(c);
+            }
           }
           status.textContent = 'Prohledáno ' + done + ' z ' + list.length + ' titulů…';
         }, function () { done++; });
       })).then(function () {
-        status.textContent = found ? 'Ve vybraných službách: ' + titulu(found) + '.' : 'Ve vybraných službách nyní není žádný titul.';
+        finished = true;
+        return redraw();
       });
     }).catch(function (err) { status.textContent = errorText(err); });
     return null;
