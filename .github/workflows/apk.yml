@@ -9,6 +9,7 @@
 #   VIDEOTEKA_KEY_PASSWORD
 #
 # Každá verze na main (version.json) vytvoří GitHub Release s APK – odkaz ke stažení v README.
+# Bez podpisového klíče vznikne vydání s debug APK (funguje, ale novější APK nepůjde nainstalovat přes starší).
 name: Mobilní aplikace (APK)
 
 on:
@@ -40,6 +41,10 @@ jobs:
         run: |
           echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "VIDEOTEKA_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      # aktualizace v APK se stahují z úložiště, ve kterém se sestavuje (u forku z forku)
+      - name: Úložiště pro aktualizace
+        run: sed -i "s#var REPO = '[^']*'#var REPO = '${GITHUB_REPOSITORY}'#" js/boot.js && grep -n "var REPO" js/boot.js
 
       - name: Build
         env:
@@ -75,7 +80,7 @@ jobs:
         run: echo "v=$(node -p "require('./version.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Release
-        if: env.KS_B64 != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.ver.outputs.v) }}

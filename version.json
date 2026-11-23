@@ -1,7 +1,7 @@
 {
-  "version": "1.30.0",
+  "version": "1.30.1",
   "minShell": 1,
-  "notes": "Detail titulu se žánry a anglickým popisem, návrat na pozici ve všech seznamech, filtry a řazení v rozbalených seznamech, tlačítko Nahoru.",
+  "notes": "Příprava pro vlastní kopie aplikace (aktualizace z vlastního repozitáře).",
   "files": [
     "css/style.css",
     "js/services.js",

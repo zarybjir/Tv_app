@@ -7,7 +7,10 @@
   // Verze „slupky" (index.html, boot.js, config.xml, oprávnění). Když aktualizace potřebuje
   // novější slupku (version.json → minShell), stáhnout nejde a je nutné aplikaci přeinstalovat.
   var SHELL = 1;
-  var SOURCE = 'https://raw.githubusercontent.com/zarybjir/Tv_app/main/';
+  // Úložiště na GitHubu, ze kterého se stahují aktualizace (vlastník/název). U vlastní kopie
+  // (fork) ho sestavení APK nastaví samo; prázdná hodnota aktualizace vypne.
+  var REPO = 'zarybjir/Tv_app';
+  var SOURCE = REPO ? 'https://raw.githubusercontent.com/' + REPO + '/main/' : '';
   var BUNDLED_FILES = ['css/style.css', 'js/services.js', 'js/qrcode.js', 'js/app.js'];
   var LS = 'promitarna.update.';
 
@@ -54,6 +57,7 @@
   var ready = null; // stažená verze čekající na restart
 
   function check() {
+    if (!SOURCE) return Promise.resolve({ status: 'latest', version: running });
     var bust = '?t=' + Date.now();
     set('lastCheck', String(Date.now()));
     return fetch(SOURCE + 'version.json' + bust, { cache: 'no-store' }).then(function (r) {

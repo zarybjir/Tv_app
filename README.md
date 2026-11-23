@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk"><b>Stáhnout pro Android</b></a>
+  <a href="../../releases/latest/download/Videoteka.apk"><b>Stáhnout pro Android</b></a>
   &nbsp;·&nbsp;
   <a href="#televize-samsung">Instalace do televize</a>
 </p>
@@ -45,7 +45,7 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
 
 ## Android
 
-1. Stáhnout [Videoteka.apk](https://github.com/zarybjir/Tv_app/releases/latest/download/Videoteka.apk)
+1. Stáhnout [Videoteka.apk](../../releases/latest/download/Videoteka.apk)
    a nainstalovat (je potřeba povolit instalaci z tohoto zdroje).
 2. V aplikaci otevřít **Nastavení → Klíče** a vložit klíče podle tabulky níže.
 
@@ -122,6 +122,48 @@ být podepsány stejným certifikátem.
 | Žluté | vrátit poslední skrytí |
 
 Pokud se některá služba nespustí, lze její aplikaci vybrat v *Nastavení → Služby*.
+
+</details>
+
+## Vlastní kopie
+
+Kdo chce mít Videotéku nezávislou na tomto repozitáři (vlastní aktualizace, vlastní úpravy),
+vytvoří si kopii na GitHubu. Aplikace sestavená z kopie se aktualizuje pouze z ní.
+
+1. Na GitHubu zvolit **Fork** (vpravo nahoře) a vytvořit kopii pod vlastním účtem.
+2. V kopii otevřít záložku **Actions** a povolit workflowy
+   (*I understand my workflows, go ahead and enable them*).
+3. Volitelně nastavit podpisový klíč (viz níže). Bez něj se APK podepíše dočasným klíčem:
+   aplikace funguje a obsah se aktualizuje, ale novější APK pak nejde nainstalovat přes
+   starší bez odinstalace.
+4. V *Actions → Mobilní aplikace (APK)* zvolit **Run workflow**. Po dokončení je APK
+   v sekci **Releases** kopie a odkaz *Stáhnout pro Android* v README kopie vede na něj.
+5. Pro televizi je potřeba v souboru `js/boot.js` přepsat `var REPO = '…'` na vlastní
+   úložiště (`uzivatel/nazev`) a teprve potom aplikaci nainstalovat.
+
+Aktualizace z původního repozitáře se do kopie nedostanou, dokud je vlastník kopie sám
+nepřevezme (na GitHubu tlačítkem *Sync fork*).
+
+<details>
+<summary>Podpisový klíč pro APK</summary>
+
+Klíč se vytvoří jednou (vyžaduje Javu, příkaz `keytool`):
+
+```
+keytool -genkeypair -v -keystore videoteka.jks -alias videoteka -keyalg RSA -keysize 2048 -validity 10000
+```
+
+V kopii v *Settings → Secrets and variables → Actions* přidat čtyři secrets:
+
+| Název | Hodnota |
+|---|---|
+| `VIDEOTEKA_KEYSTORE_B64` | obsah souboru převedený do base64 (`base64 -w0 videoteka.jks`, ve Windows `[Convert]::ToBase64String([IO.File]::ReadAllBytes("videoteka.jks"))`) |
+| `VIDEOTEKA_KEYSTORE_PASSWORD` | heslo k souboru |
+| `VIDEOTEKA_KEY_ALIAS` | `videoteka` |
+| `VIDEOTEKA_KEY_PASSWORD` | heslo ke klíči |
+
+Soubor `videoteka.jks` a hesla je potřeba bezpečně uschovat a nikdy je nenahrávat do
+repozitáře.
 
 </details>
 
