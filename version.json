@@ -1,7 +1,7 @@
 {
-  "version": "1.31.0",
+  "version": "1.31.1",
   "minShell": 1,
-  "notes": "Trailery v detailu titulu, webová verze pro iPhone, opravy řazení a filtrů.",
+  "notes": "Řádek Doporučené nabízí s filtrem hodnocení více titulů.",
   "files": [
     "css/style.css",
     "js/services.js",

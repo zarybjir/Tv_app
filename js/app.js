@@ -526,13 +526,15 @@
     var seen = Object.keys(hiddenItems).map(function (k) { return hiddenItems[k]; })
       .filter(function (e) { return e.reason === 'seen'; })
       .sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
-    return watchlist.slice(-6).reverse().concat(seen.slice(0, 6));
+    return watchlist.slice(-10).reverse().concat(seen.slice(0, 10));
   }
   var recsCache = null;
   function recsDiscover(opts) {
     if ((opts.page || 1) > 1) return Promise.resolve([]);
-    var seeds = recSeeds().slice(0, 10);
-    var sig = seeds.map(function (s) { return s.key; }).join(',') + '|' + allProviders().join(',');
+    var seeds = recSeeds();
+    // s filtrem hodnocení vezmi jen kandidáty, kteří mají šanci projít (podle hodnocení TMDB)
+    var minVote = filterActive() ? Math.max(0, (filt().imdb || 0) - 1, filt().rt ? 6 : 0) : 0;
+    var sig = seeds.map(function (s) { return s.key; }).join(',') + '|' + allProviders().join(',') + '|' + minVote;
     if (recsCache && recsCache.sig === sig && Date.now() - recsCache.t < DAY) return Promise.resolve(recsCache.items.slice());
     var skip = {};
     seeds.forEach(function (s) { skip[s.key] = 1; });
@@ -544,12 +546,12 @@
       lists.forEach(function (list) {
         list.slice(0, 20).forEach(function (r, i) {
           var it = normalize(r, r.media_type || (r.title ? 'movie' : 'tv'));
-          if (skip[it.key] || isHidden(it)) return;
+          if (skip[it.key] || isHidden(it) || it.vote < minVote) return;
           byKey[it.key] = it;
           score[it.key] = (score[it.key] || 0) + (20 - i) + it.vote;
         });
       });
-      var cand = Object.keys(score).sort(function (a, b) { return score[b] - score[a]; }).slice(0, 40).map(function (k) { return byKey[k]; });
+      var cand = Object.keys(score).sort(function (a, b) { return score[b] - score[a]; }).slice(0, 120).map(function (k) { return byKey[k]; });
       return Promise.all(cand.map(function (it) {
         return providersFor(it).then(function (pr) { return pr.mine.length > 0; }).catch(function () { return false; });
       })).then(function (ok) {
