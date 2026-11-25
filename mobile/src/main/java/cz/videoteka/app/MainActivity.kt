@@ -7,6 +7,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -27,6 +30,9 @@ class MainActivity : Activity() {
 
     private lateinit var webView: WebView
     private var pendingCamera: PermissionRequest? = null
+    // video na celou obrazovku (trailery)
+    private var fullView: View? = null
+    private var fullCallback: WebChromeClient.CustomViewCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +58,17 @@ class MainActivity : Activity() {
 
         // Fotoaparát jen pro skenování QR kódu z televize (párování)
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                if (fullView != null) { callback.onCustomViewHidden(); return }
+                fullView = view
+                fullCallback = callback
+                view.setBackgroundColor(0xFF000000.toInt())
+                (window.decorView as FrameLayout).addView(view, ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            }
+
+            override fun onHideCustomView() { hideFullView() }
+
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread {
                     if (!request.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
@@ -144,8 +161,17 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun hideFullView() {
+        val v = fullView ?: return
+        (window.decorView as FrameLayout).removeView(v)
+        fullView = null
+        fullCallback?.onCustomViewHidden()
+        fullCallback = null
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (fullView != null) { hideFullView(); return }
         webView.evaluateJavascript("window.videotekaBack ? (window.videotekaBack(), 1) : 0") { res ->
             if (res != "1") moveTaskToBack(true)
         }

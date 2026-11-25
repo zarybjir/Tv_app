@@ -9,6 +9,8 @@
   // mobilní aplikace (Android) dává k dispozici most do systému
   var ANDROID = window.VideotekaAndroid || null;
   var MOBILE = !!ANDROID || (!IS_TV && window.innerWidth < 1100);
+  // webová verze (iPhone, počítač): bez mostu do systému, služby se otevírají odkazem
+  var WEB = !IS_TV && !ANDROID && /^https?:$/.test(location.protocol);
   if (MOBILE) {
     document.documentElement.className += ' mobile';
     // index.html je nastavený na televizi (šířka 1920 px); na mobilu použij šířku zařízení
@@ -264,6 +266,7 @@
 
   var LIST_SCREENS = ['search', 'grid', 'person', 'calendar'];
   function back() {
+    if (closeTrailer()) return;
     if (!history.length) { exitApp(); return; }
     var prev = history.pop();
     var ps = screens[prev.name];
@@ -319,7 +322,48 @@
     toTopTarget = t;
     toTopBtn.classList.toggle('show', !!t && t.scrollTop > 900 && currentScreen.name !== 'settings');
   }
-  document.addEventListener('scroll', function () { updateToTop(); }, true);
+  var toTopTimer = null;
+  document.addEventListener('scroll', function () {
+    if (toTopTimer) return;
+    toTopTimer = setTimeout(function () { toTopTimer = null; updateToTop(); }, 200);
+  }, true);
+
+  // ----- trailer: přehrává se přímo v aplikaci (YouTube), v televizi se nenabízí
+  var trailerEl = null;
+  function closeTrailer() {
+    if (!trailerEl) return false;
+    trailerEl.parentNode.removeChild(trailerEl);
+    trailerEl = null;
+    return true;
+  }
+  function trailerFor(item) {
+    return tmdb('/' + item.type + '/' + item.id + '/videos', { include_video_language: 'cs,en,null' }).then(function (j) {
+      var score = function (v) { return (v.type === 'Trailer' ? 4 : 0) + (v.iso_639_1 === 'cs' ? 2 : 0) + (v.official ? 1 : 0); };
+      var list = (j.results || []).filter(function (v) { return v.site === 'YouTube' && v.key && (v.type === 'Trailer' || v.type === 'Teaser'); });
+      list.sort(function (a, b) { return score(b) - score(a); });
+      return list[0] || null;
+    });
+  }
+  function showTrailer(v, title) {
+    closeTrailer();
+    var yt = 'https://www.youtube.com/watch?v=' + encodeURIComponent(v.key);
+    var frame = h('iframe', {
+      src: 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.key) + '?autoplay=1&playsinline=1&rel=0&hl=cs',
+      allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen: 'true',
+      referrerpolicy: 'strict-origin-when-cross-origin', frameborder: '0', title: 'Trailer'
+    });
+    var closeBtn = h('div', { class: 'btn', text: 'Zavřít' });
+    closeBtn.addEventListener('click', function (e) { e.stopPropagation(); closeTrailer(); });
+    var ytBtn = h('div', { class: 'btn', text: 'Otevřít v YouTube' });
+    ytBtn.addEventListener('click', function (e) { e.stopPropagation(); closeTrailer(); openExternal(yt); });
+    trailerEl = h('div', { class: 'trailer' }, [
+      h('div', { class: 'trailer-title', text: title + (v.iso_639_1 === 'cs' ? '' : ' · trailer v původním znění') }),
+      h('div', { class: 'trailer-frame' }, [frame]),
+      h('div', { class: 'trailer-actions' }, [closeBtn, ytBtn])
+    ]);
+    trailerEl.addEventListener('click', function (e) { if (e.target === trailerEl) closeTrailer(); });
+    document.body.appendChild(trailerEl);
+  }
 
   function exitApp() {
     if (ANDROID) { ANDROID.exit(); return; }
@@ -418,17 +462,19 @@
   function today() { return new Date().toISOString().slice(0, 10); }
   function atLeast(o, k, v) { o[k] = Math.max(o[k] || 0, v); }
   function applySort(mp, tp, sort) {
+    // česká tvorba má na TMDB řádově méně hlasů než světová
+    var cs = filt().cz === 'cs';
     if (sort === 'rating') {
       mp.sort_by = tp.sort_by = 'vote_average.desc';
-      atLeast(mp, 'vote_count.gte', 800); atLeast(tp, 'vote_count.gte', 250);
+      atLeast(mp, 'vote_count.gte', cs ? 25 : 800); atLeast(tp, 'vote_count.gte', cs ? 10 : 250);
     } else if (sort === 'newest') {
       mp.sort_by = 'primary_release_date.desc'; mp['primary_release_date.lte'] = today(); atLeast(mp, 'vote_count.gte', 20);
       tp.sort_by = 'first_air_date.desc'; tp['first_air_date.lte'] = today(); atLeast(tp, 'vote_count.gte', 10);
     } else if (sort === 'gems') {
       // vysoké hodnocení, ale málo hlasů = méně známé tituly
       mp.sort_by = tp.sort_by = 'vote_average.desc';
-      atLeast(mp, 'vote_average.gte', 7.2); atLeast(mp, 'vote_count.gte', 150); mp['vote_count.lte'] = 1500;
-      atLeast(tp, 'vote_average.gte', 7.5); atLeast(tp, 'vote_count.gte', 60); tp['vote_count.lte'] = 400;
+      atLeast(mp, 'vote_average.gte', cs ? 6.8 : 7.2); atLeast(mp, 'vote_count.gte', cs ? 8 : 150); mp['vote_count.lte'] = cs ? 60 : 1500;
+      atLeast(tp, 'vote_average.gte', cs ? 7 : 7.5); atLeast(tp, 'vote_count.gte', cs ? 5 : 60); tp['vote_count.lte'] = cs ? 30 : 400;
     }
   }
   // období z filtru Roky: [od, do] (roky), nebo null
@@ -461,7 +507,11 @@
   // Oscarové filmy: nejlépe hodnocené filmy, u kterých OMDb uvádí Oscara nebo nominaci
   function awardsDiscover(opts) {
     if (!hasRatingsSource()) return Promise.resolve([]);
-    return discover(Object.assign({}, opts, { awards: false, sort: 'rating', tv: null })).then(function (items) {
+    var pg = opts.page || 1;
+    return Promise.all([3 * pg - 2, 3 * pg - 1, 3 * pg].map(function (n) {
+      return discover(Object.assign({}, opts, { awards: false, sort: 'rating', tv: null, page: n }));
+    })).then(function (lists) {
+      var items = lists[0].concat(lists[1], lists[2]);
       return Promise.all(items.map(awardsFor)).then(function (aw) {
         var out = items.filter(function (it, i) { return aw[i] === 'won'; })
           .concat(items.filter(function (it, i) { return aw[i] === 'nom'; }));
@@ -1026,7 +1076,37 @@
     return (service.android || []).filter(function (p) { return installedApps.some(function (a) { return a.id === p; }); })[0] || null;
   }
 
+  // ----- webová verze: služba se otevře odkazem (v telefonu ho převezme její aplikace)
+  function webUrl(service, title) {
+    if (title && service.search) return service.search + encodeURIComponent(title);
+    return service.web || null;
+  }
+  function openWeb(url, win) {
+    if (win) { try { win.location.href = url; return; } catch (e) { /* okno se nepodařilo použít */ } }
+    var w = null;
+    try { w = window.open(url, '_blank'); } catch (e2) { w = null; }
+    if (!w) location.href = url;
+  }
+  function webPlay(service, item) {
+    var fallback = webUrl(service, item.title);
+    var c = linkCache[item.key];
+    var cached = c && Date.now() - c.t < 30 * DAY;
+    if (!CFG.watchmodeKey && !cached) { if (fallback) openWeb(fallback); return; }
+    // nové okno se musí otevřít hned při klepnutí, adresa se doplní po zjištění odkazu
+    var win = null;
+    try { win = window.open('', '_blank'); } catch (e) { win = null; }
+    titleLinks(item).then(function (links) { return pickLink(links, service); }, function () { return null; }).then(function (url) {
+      url = url || fallback;
+      if (url) openWeb(url, win); else if (win) win.close();
+    });
+  }
+
   function launchService(service, hint) {
+    if (WEB) {
+      var wu = webUrl(service);
+      if (wu) openWeb(wu); else toast(service.name + ' nemá webovou adresu.');
+      return;
+    }
     if (ANDROID) {
       var pkg = androidPackage(service);
       if (pkg && ANDROID.launch(pkg)) return;
@@ -1037,7 +1117,7 @@
     if (!IS_TV) { toast('V televizi by se nyní spustila aplikace ' + service.name + '.'); return; }
     var ids = candidateIds(service), i = 0, errs = [];
     var mode = launchMode(service);
-    toast(hint || 'Spouštím ' + service.name + '…');
+    toast(hint || 'Spouští se ' + service.name + '…');
     function fail(id, e) { errs.push(id + ': ' + ((e && (e.name || e.message)) || 'chyba')); tryNext(); }
     function ok() { if (hint) toast(hint); afterLaunch(); }
     function tryNext() {
@@ -1190,9 +1270,10 @@
   }
 
   function playTitle(service, item) {
-    var hint = 'V ' + service.name + ' vyhledej: ' + item.title;
+    if (WEB) { webPlay(service, item); return; }
+    var hint = service.name + ' – k vyhledání: ' + item.title;
     if ((!ANDROID && deepMethod(service) === 'off') || !CFG.watchmodeKey || !CFG.tmdbKey) { launchService(service, hint); return; }
-    toast('Otevírám „' + item.title + '" v ' + service.name + '…');
+    toast('Otevírá se „' + item.title + '" v ' + service.name + '…');
     titleLinks(item).then(function (links) {
       var url = pickLink(links, service);
       if (!url) { launchService(service, hint); return; }
@@ -1882,7 +1963,7 @@
       tmdb('/search/multi', { query: query.trim(), include_adult: 'false' }).then(function (j) {
         var all = (j.results || []).filter(function (r) { return r.media_type === 'movie' || r.media_type === 'tv'; })
           .slice(0, 18).map(function (r) { return normalize(r); });
-        return applyFilter(all);
+        return applyFilter(all, { noPeriod: true }); // hledání podle názvu filtr Roky nepoužívá
       }).then(function (res) {
         if (my !== seq) return;
         clear(grid);
@@ -2049,7 +2130,7 @@
       h('div', { class: 'dposter' }, [item.poster ? h('img', { src: IMG + 'w500' + item.poster, alt: '' }) : null]),
       info
     ]));
-    root.appendChild(h('div', { class: 'hintbar', text: (CFG.watchmodeKey ? 'OK otevře titul přímo ve službě' : 'OK otevře aplikaci služby (pro přímý skok na titul je potřeba klíč Watchmode)') + ' · Zpět vrátí na předchozí obrazovku' }));
+    root.appendChild(h('div', { class: 'hintbar', text: 'OK otevře aplikaci služby · Zpět vrátí na předchozí obrazovku' }));
 
     var foundServices = [];
     var listBtn = h('div', {
@@ -2091,6 +2172,14 @@
       });
     }
     info.appendChild(loading);
+
+    if (CFG.tmdbKey && !IS_TV) {
+      trailerFor(item).then(function (v) {
+        if (!v || currentScreen !== screens.detail || !document.body.contains(listBtn)) return;
+        actions.insertBefore(h('div', { class: 'btn secondary focusable', 'data-fid': 'd-trailer', text: 'Trailer',
+          onselect: function () { showTrailer(v, item.title); } }), listBtn);
+      }).catch(function () {});
+    }
 
     // doplň popis, pokud chybí (např. u položek ze seznamu)
     if (!item.overview && CFG.tmdbKey) {
@@ -2322,7 +2411,7 @@
         }) : null;
         add(scard([h('span', { class: 'sdot', style: 'background:' + s.colors[0] }), h('span', { class: 'stname', text: s.name }), toggle], null, [
           sline(null, [
-            sbtn('set-app-' + s.id, 'Aplikace: ' + appLabel, function () { go('picker', { service: s }); }),
+            WEB ? null : sbtn('set-app-' + s.id, 'Aplikace: ' + appLabel, function () { go('picker', { service: s }); }),
             modeBtn, deepBtn,
             sbtn('set-test-' + s.id, 'Vyzkoušet', function () { launchService(s); })
           ])
@@ -2410,7 +2499,9 @@
 
     // ---------------------------------------------------------------- Aplikace
     if (settingsTab === 'aplikace') {
-      if (UPD) {
+      if (UPD && UPD.web) {
+        add(scard('Verze', 'Verze ' + UPD.version + '. Webová verze se aktualizuje sama při načtení.', []));
+      } else if (UPD) {
         var pend = UPD.pendingVersion();
         add(scard('Aktualizace', 'Verze ' + UPD.version + (UPD.downloaded ? ' (stažená)' : '') + ' · ' + updateLabel(), [
           sline(null, [
@@ -2480,7 +2571,7 @@
     }
     // řazení jen u běžných kategorií (ne u změn katalogu, doporučení, Oscarů a skrytých klenotů); filtry všude
     var o = params.opts;
-    var canSort = !o.changes && !o.recs && !o.awards && o.sort !== 'gems';
+    var canSort = !o.changes && !o.recs && !o.awards && !o.extraMovie && o.sort !== 'gems';
     sc.appendChild(listControls({
       sorts: canSort ? SORTS.filter(function (sd) { return !(o.classic && sd[0] === 'newest'); }) : null,
       sort: function () { return curSort; },
@@ -2919,7 +3010,7 @@
       var s = services[0];
       if (!s) { toast('Seriál nyní není ve vybraných službách. Díl ' + epLabel(ep.season_number, ep.episode_number) + ' byl označen.'); return; }
       playTitle(s, item);
-      toast('Otevírám ' + s.name + ' – pusť díl ' + epLabel(ep.season_number, ep.episode_number) + (ep.name ? ' „' + ep.name + '"' : ''));
+      toast('Otevírá se ' + s.name + ' – díl ' + epLabel(ep.season_number, ep.episode_number) + (ep.name ? ' „' + ep.name + '"' : ''));
     }
     function markList() {
       Array.prototype.forEach.call(listWrap.querySelectorAll('.ep'), function (el) {

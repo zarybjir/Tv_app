@@ -6,11 +6,13 @@
 
 <p align="center">
   Nabídka všech streamovacích služeb na jedné obrazovce.<br>
-  Android · televize Samsung
+  Android · iPhone (webová aplikace) · televize Samsung
 </p>
 
 <p align="center">
   <a href="../../releases/latest/download/Videoteka.apk"><b>Stáhnout pro Android</b></a>
+  &nbsp;·&nbsp;
+  <a href="#iphone-a-webová-verze">iPhone a web</a>
   &nbsp;·&nbsp;
   <a href="#televize-samsung">Instalace do televize</a>
 </p>
@@ -35,6 +37,7 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
 - Řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy a Klasika
 - Doporučení podle seznamu Chci vidět a zhlédnutých titulů
 - Detail titulu se žánry, délkou, zemí původu a možností zobrazit anglický popis
+- Trailery přehrávané přímo v aplikaci (telefon a web)
 - Hodnocení IMDb a Rotten Tomatoes s filtrem podle hodnocení
 - Filtr podle období vydání, české tvorby a českého dabingu
 - Nově přidané a brzy odcházející tituly, kalendář nových dílů
@@ -48,6 +51,19 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
 1. Stáhnout [Videoteka.apk](../../releases/latest/download/Videoteka.apk)
    a nainstalovat (je potřeba povolit instalaci z tohoto zdroje).
 2. V aplikaci otevřít **Nastavení → Klíče** a vložit klíče podle tabulky níže.
+
+## iPhone a webová verze
+
+Videotéka běží také jako webová aplikace na adrese repozitáře na GitHub Pages
+(`https://<uživatel>.github.io/<repozitář>/`).
+
+1. Adresu otevřít v Safari.
+2. Zvolit **Sdílet → Přidat na plochu**. Videotéka se pak spouští z plochy na celou obrazovku.
+3. V **Nastavení → Klíče** vložit klíče podle tabulky níže.
+
+Služby a tituly se otevírají odkazem, který v telefonu převezme aplikace dané služby.
+Webová verze se aktualizuje sama při načtení. GitHub Pages se u repozitáře zapíná jednou
+v *Settings → Pages → Deploy from a branch → main / (root)*.
 
 ## Klíče
 

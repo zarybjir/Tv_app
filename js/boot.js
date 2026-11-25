@@ -10,7 +10,10 @@
   // Úložiště na GitHubu, ze kterého se stahují aktualizace (vlastník/název). U vlastní kopie
   // (fork) ho sestavení APK nastaví samo; prázdná hodnota aktualizace vypne.
   var REPO = 'zarybjir/Tv_app';
-  var SOURCE = REPO ? 'https://raw.githubusercontent.com/' + REPO + '/main/' : '';
+  // Webová verze (otevřená z adresy v prohlížeči, bez televize a bez mobilní aplikace) se načítá
+  // vždy čerstvá ze serveru, aktualizace si proto nestahuje.
+  var WEB = !window.tizen && !window.VideotekaAndroid && /^https?:$/.test(location.protocol);
+  var SOURCE = REPO && !WEB ? 'https://raw.githubusercontent.com/' + REPO + '/main/' : '';
   var BUNDLED_FILES = ['css/style.css', 'js/services.js', 'js/qrcode.js', 'js/app.js'];
   var LS = 'promitarna.update.';
 
@@ -30,6 +33,7 @@
   var bundled = window.PROMITARNA_BUNDLED || '0.0.0';
   var pkg = null;
   try { pkg = JSON.parse(get('pkg') || 'null'); } catch (e) { pkg = null; }
+  if (WEB) pkg = null;
   var notice = null;
 
   // Minulé spuštění stažené verze nedoběhlo → verzi zahoď a označ jako vadnou.
@@ -94,6 +98,7 @@
 
   window.PromitarnaUpdate = {
     version: running,
+    web: WEB,
     bundled: bundled,
     downloaded: !!use,
     notice: notice,
@@ -120,10 +125,12 @@
       else { el = document.createElement('script'); el.textContent = use.files[f]; document.body.appendChild(el); }
     });
   } else {
+    // na webu přidej k adresám verzi, ať prohlížeč po vydání nenačte staré soubory z mezipaměti
+    var q = WEB ? '?v=' + encodeURIComponent(bundled) : '';
     BUNDLED_FILES.forEach(function (f) {
       var el;
-      if (/\.css$/.test(f)) { el = document.createElement('link'); el.rel = 'stylesheet'; el.href = f; document.head.appendChild(el); }
-      else { el = document.createElement('script'); el.src = f; el.async = false; document.body.appendChild(el); }
+      if (/\.css$/.test(f)) { el = document.createElement('link'); el.rel = 'stylesheet'; el.href = f + q; document.head.appendChild(el); }
+      else { el = document.createElement('script'); el.src = f + q; el.async = false; document.body.appendChild(el); }
     });
   }
 })();

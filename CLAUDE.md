@@ -1,8 +1,9 @@
 # Videotéka – pokyny pro Claude
 
 Přehled streamovacích služeb (Netflix, HBO Max, Disney+, Prime Video, Apple TV, SkyShowtime) na jedné
-obrazovce. Jedna webová aplikace bez build kroku a bez npm, která běží na dvou místech:
-televize Samsung (Tizen, balíček `.wgt`) a telefon s Androidem (WebView, `mobile/`).
+obrazovce. Jedna webová aplikace bez build kroku a bez npm, která běží na třech místech:
+televize Samsung (Tizen, balíček `.wgt`), telefon s Androidem (WebView, `mobile/`) a webová verze
+pro iPhone a počítač (GitHub Pages, lze přidat na plochu).
 
 ## Jak pracovat (šetři kód i tokeny)
 
@@ -51,10 +52,13 @@ televize Samsung (Tizen, balíček `.wgt`) a telefon s Androidem (WebView, `mobi
 - `config.xml` – manifest Tizen (id `PrMtArNa01.Videoteka`, oprávnění).
 - `.github/workflows/kontrola.yml` + `.github/kontrola-vydani.js` – kontrola vydání;
   `.github/workflows/apk.yml` – sestavení APK a vydání na GitHubu.
+- `manifest.webmanifest`, `icon-180.png` – webová verze na ploše telefonu.
+- `tests/smoke.js` – automatický test (smí používat moderní JavaScript, do zařízení se nestahuje).
 - `docs/` – snímky obrazovky do README (z ukázkových dat, smyšlené názvy).
 
-Prostředí se rozlišuje proměnnými `IS_TV` (Tizen), `ANDROID` (most z APK) a `MOBILE`
-(Android nebo úzké okno). Televize se ovládá ovladačem: každý ovladatelný prvek má třídu
+Prostředí se rozlišuje proměnnými `IS_TV` (Tizen), `ANDROID` (most z APK), `WEB` (stránka
+v prohlížeči; služby se otevírají odkazem `web`/`search` ze `services.js`, zavaděč nestahuje
+aktualizace) a `MOBILE` (Android nebo úzké okno). Televize se ovládá ovladačem: každý ovladatelný prvek má třídu
 `focusable`, jedinečné `data-fid` a akci v `onselect`. V mobilu stejné prvky reagují na klepnutí.
 
 ## Obrazovky a návrat na pozici
@@ -90,7 +94,10 @@ Přístup vždy přes `load`/`save`.
 - Změnu vzhledu nebo chování ověř v prohlížeči přes Playwright: TMDB a OMDb nahraď smyšlenými
   odpověďmi (`page.route`), televizi napodob objektem `window.tizen`, telefon objektem
   `window.VideotekaAndroid`. Zkontroluj **televizi i mobil** a hlídej chyby v konzoli.
-- Testy v repozitáři zatím nejsou. Co nešlo ověřit (živá data, skutečná televize), napiš.
+- **Po každé změně spusť i `node tests/smoke.js`** (Playwright, smyšlená data, asi 30 s): projde televizi,
+  mobilní aplikaci a webovou verzi. Jednu část pustíš `node tests/smoke.js tv|android|web`.
+  Když opravíš chybu nebo přidáš funkci, přidej k ní kontrolu. Co nešlo ověřit (živá data,
+  skutečná televize, iPhone), napiš.
 - Spouštění služeb a skok na titul jdou vyzkoušet jen na skutečném zařízení. Na televizi
   Samsung skok přímo na titul nefunguje (ověřeno), služba se otevře na úvodní stránce.
 
