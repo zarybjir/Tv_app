@@ -1,7 +1,7 @@
 {
-  "version": "1.33.0",
+  "version": "1.33.1",
   "minShell": 1,
-  "notes": "Stránka herce má vlastní filtr a zobrazí i celou tvorbu, nejen tituly ve vybraných službách.",
+  "notes": "Stránka herce opět zobrazuje jen tituly ve vybraných službách; vlastní filtr zůstává.",
   "files": [
     "css/style.css",
     "js/services.js",

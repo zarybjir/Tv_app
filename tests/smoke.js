@@ -133,7 +133,7 @@ async function tv(browser, base) {
   const kinds = await page.evaluate(() => ({ label: document.querySelector('#screen-home [data-fid="nav-f-type"]').textContent,
     movies: document.querySelectorAll('#screen-home .card[data-key^="movie:"]').length, tv: document.querySelectorAll('#screen-home .card[data-key^="tv:"]').length }));
   check('filtr Filmy', kinds.label === 'Filmy' && kinds.movies > 20 && kinds.tv === 0, kinds);
-  // stránka herce: vlastní filtr (domovská obrazovka má právě Filmy) a celá tvorba
+  // stránka herce: vlastní filtr (domovská obrazovka má právě Filmy)
   await page.evaluate(() => document.querySelector('#screen-home .card[data-key^="movie:"]').click());
   await page.waitForTimeout(1200);
   await select(page, 'p-1');
@@ -141,9 +141,6 @@ async function tv(browser, base) {
   const pcards = () => page.evaluate(() => document.querySelectorAll('#screen-person .card').length);
   check('herec: tituly ve vybraných službách', await active(page) === 'screen-person' && await pcards() === 10, await pcards());
   check('herec: vlastní filtr nepřebírá filtr z domovské obrazovky', await page.evaluate(() => document.querySelector('#screen-person [data-fid="nav-f-type"]').textContent) === 'Typ: vše');
-  await select(page, 'scope-all');
-  await page.waitForTimeout(1500);
-  check('herec: celá tvorba', await pcards() === 20, await pcards());
   await select(page, 'nav-f-period');
   await page.waitForTimeout(1000);
   check('herec: filtr let platí jen pro tuto stránku', await pcards() === 0 && await page.evaluate(() => document.querySelector('#screen-person .gridstatus').textContent) === 'Nic nesplňuje nastavený filtr.');

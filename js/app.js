@@ -2989,24 +2989,22 @@
         list.push(it);
       });
       list.sort(function (a, b) { return b.pop - a.pop; });
-      list = list.slice(0, 240);
+      list = list.slice(0, 60);
       // stránka má vlastní filtr a řazení, nezávislé na domovské obrazovce
       var pf = { type: '', imdb: 0, rt: 0, period: '', cz: '' };
-      var scope = 'mine', sort = 'popular', mineOf = {}, checked = 0, scanned = 0, gen = 0;
-      function scan(upTo) {
-        var part = list.slice(scanned, upTo);
-        scanned = Math.max(scanned, upTo);
-        return Promise.all(part.map(function (it) {
+      var sort = 'popular', mineOf = {}, checked = 0, gen = 0;
+      function scan() {
+        return Promise.all(list.map(function (it) {
           return enqueue(function () { return providersFor(it); }).then(function (res) {
             checked++;
             if (res.mine.length) mineOf[it.key] = res.mine;
-            if (scope === 'mine' || checked % 20 === 0) status.textContent = 'Prohledáno ' + checked + ' z ' + Math.min(scanned, list.length) + ' titulů…';
+            status.textContent = 'Prohledáno ' + checked + ' z ' + list.length + ' titulů…';
           }, function () { checked++; });
         }));
       }
       function redraw() {
         var my = ++gen;
-        var items = list.filter(function (it) { return scope === 'all' || (mineOf[it.key] && !isHidden(it)); });
+        var items = list.filter(function (it) { return mineOf[it.key] && !isHidden(it); });
         if (pf.type) items = items.filter(function (it) { return it.type === pf.type; });
         if (pf.cz) items = items.filter(function (it) { return it.lang === 'cs'; });
         var pr = periodRange(pf.period);
@@ -3027,8 +3025,7 @@
           clear(grid);
           out.forEach(function (it) {
             var c = card(it, 'pc-' + it.key);
-            setBadges(c, mineOf[it.key] || []);
-            if (scope === 'all') markHidden(c);
+            setBadges(c, mineOf[it.key]);
             grid.appendChild(c);
           });
           var again = fk && grid.querySelector('.card[data-key="' + fk + '"]');
@@ -3036,34 +3033,18 @@
           else if (grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
           var filtered = total - out.length || pf.type || pf.cz || pf.period;
           status.textContent = out.length
-            ? (scope === 'all' ? 'Celá tvorba: ' : 'Ve vybraných službách: ') + titulu(out.length) + '.'
+            ? 'Ve vybraných službách: ' + titulu(out.length) + '.'
             : filtered ? 'Nic nesplňuje nastavený filtr.'
-            : scope === 'all' ? 'Žádné tituly.' : 'Ve vybraných službách nyní není žádný titul. Všechny tituly ukáže Celá tvorba.';
+            : 'Ve vybraných službách nyní není žádný titul.';
         });
       }
-      var scopeEl = h('div', { class: 'gridtabs' });
-      [['mine', 'Ve vybraných službách'], ['all', 'Celá tvorba']].forEach(function (sd) {
-        var el = h('div', { class: 'pill focusable' + (scope === sd[0] ? ' on' : ''), 'data-fid': 'scope-' + sd[0], text: sd[1] });
-        el._select = function () {
-          if (scope === sd[0]) return;
-          Array.prototype.forEach.call(scopeEl.children, function (x) { x.classList.remove('on'); });
-          el.classList.add('on');
-          scope = sd[0];
-          redraw();
-          // dostupnost zbytku tvorby se dohledá na pozadí a štítky služeb se doplní
-          if (scope === 'all' && scanned < list.length) scan(list.length).then(function () { redraw(); });
-        };
-        scopeEl.appendChild(el);
-      });
-      sc.insertBefore(scopeEl, grid);
       sc.insertBefore(listControls({
         sorts: SORTS, sort: function () { return sort; },
         onSort: function (v) { sort = v; redraw(); },
         onFilter: function () { redraw(); },
         store: pf
       }), grid);
-      // nejdřív nejznámější tituly; zbytek až při zobrazení celé tvorby
-      return scan(60).then(function () { return redraw(); });
+      return scan().then(function () { return redraw(); });
     }).catch(function (err) { status.textContent = errorText(err); });
     return null;
   });
