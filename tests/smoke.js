@@ -76,6 +76,7 @@ async function tv(browser, base) {
   page.on('pageerror', (e) => errs.push(e.message));
   await page.addInitScript(() => {
     localStorage.clear();
+    localStorage.setItem('promitarna.watchlist', JSON.stringify([{ key: 'movie:9001', id: 9001, type: 'movie', title: 'Titul v seznamu', year: '2020', services: [] }]));
     window.__launched = [];
     window.tizen = { application: { getAppsInfo: (ok) => ok([{ id: 'org.tizen.netflix-app', name: 'Netflix' }]),
       launch: (id, ok) => { window.__launched.push(id); if (ok) ok(); }, getCurrentApplication: () => ({ exit: () => {} }) } };
@@ -87,6 +88,9 @@ async function tv(browser, base) {
   check('řádek Služby', r.includes('Služby'), r);
   check('kategorie (Krimi, Komedie, Drama)', ['Krimi', 'Komedie', 'Drama'].every((x) => r.includes(x)), r);
   check('nové řádky (Nejlépe hodnocené, Skryté klenoty, Klasika)', ['Nejlépe hodnocené', 'Skryté klenoty', 'Klasika'].every((x) => r.includes(x)), r);
+  // přímá doporučení jsou v testu prázdná – řádek se musí doplnit podle žánrů
+  check('Doporučené se doplní i bez přímých doporučení', await page.evaluate(() => document.querySelectorAll('#screen-home .card[data-fid^="rec-"]').length >= 10),
+    await page.evaluate(() => document.querySelectorAll('#screen-home .card[data-fid^="rec-"]').length));
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowRight');
   check('ovladač posouvá fokus', await page.evaluate(() => !!document.querySelector('.focus')));

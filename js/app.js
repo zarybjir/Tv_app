@@ -529,16 +529,35 @@
     return watchlist.slice(-10).reverse().concat(seen.slice(0, 10));
   }
   var recsCache = null;
+  // doplnění doporučení: dobře hodnocené tituly z vybraných služeb v žánrech, které se v doporučeních opakují
+  function recsFill(opts, genres, skip, page) {
+    return discover({
+      providers: opts.providers, page: page,
+      movie: genres.movie.join('|'), tv: genres.tv.join('|'),
+      extraMovie: { 'vote_average.gte': 6.8, 'vote_count.gte': 300 },
+      extraTv: { 'vote_average.gte': 7.2, 'vote_count.gte': 100 }
+    }).then(function (items) {
+      return items.filter(function (it) { return !skip[it.key]; });
+    }).catch(function () { return []; });
+  }
   function recsDiscover(opts) {
-    if ((opts.page || 1) > 1) return Promise.resolve([]);
+    var pg = opts.page || 1;
     var seeds = recSeeds();
     // s filtrem hodnocení vezmi jen kandidáty, kteří mají šanci projít (podle hodnocení TMDB)
     var minVote = filterActive() ? Math.max(0, (filt().imdb || 0) - 1, filt().rt ? 6 : 0) : 0;
     var sig = seeds.map(function (s) { return s.key; }).join(',') + '|' + allProviders().join(',') + '|' + minVote;
-    if (recsCache && recsCache.sig === sig && Date.now() - recsCache.t < DAY) return Promise.resolve(recsCache.items.slice());
     var skip = {};
     seeds.forEach(function (s) { skip[s.key] = 1; });
     watchlist.forEach(function (w) { skip[w.key] = 1; });
+    var cached = recsCache && recsCache.sig === sig && Date.now() - recsCache.t < DAY;
+    if (pg > 1) return cached ? recsFill(opts, recsCache.genres, recsCache.skip, pg) : Promise.resolve([]);
+    // přímých doporučení bývá na vybraných službách málo – do 20 titulů je doplň podle žánrů
+    var finish = function (c) {
+      if (c.items.length >= 20) return c.items.slice();
+      return recsFill(opts, c.genres, c.skip, 1).then(function (more) { return c.items.concat(more); });
+    };
+    if (cached) return finish(recsCache);
+    var gcount = { movie: {}, tv: {} };
     return Promise.all(seeds.map(function (sd) {
       return tmdb('/' + sd.type + '/' + sd.id + '/recommendations').then(function (j) { return j.results || []; }).catch(function () { return []; });
     })).then(function (lists) {
@@ -546,6 +565,7 @@
       lists.forEach(function (list) {
         list.slice(0, 20).forEach(function (r, i) {
           var it = normalize(r, r.media_type || (r.title ? 'movie' : 'tv'));
+          (r.genre_ids || []).forEach(function (g) { gcount[it.type][g] = (gcount[it.type][g] || 0) + 1; });
           if (skip[it.key] || isHidden(it) || it.vote < minVote) return;
           byKey[it.key] = it;
           score[it.key] = (score[it.key] || 0) + (20 - i) + it.vote;
@@ -556,8 +576,10 @@
         return providersFor(it).then(function (pr) { return pr.mine.length > 0; }).catch(function () { return false; });
       })).then(function (ok) {
         var items = cand.filter(function (it, i) { return ok[i]; });
-        recsCache = { sig: sig, t: Date.now(), items: items };
-        return items.slice();
+        var top = function (m) { return Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 3); };
+        items.forEach(function (it) { skip[it.key] = 1; });
+        recsCache = { sig: sig, t: Date.now(), items: items, genres: { movie: top(gcount.movie), tv: top(gcount.tv) }, skip: skip };
+        return finish(recsCache);
       });
     });
   }
