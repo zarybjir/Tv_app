@@ -1727,21 +1727,24 @@
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
   // hodnota filtru; typ (filmy/seriály) se ukládá v nastavení obsahu, ostatní ve filt()
-  function fget(kind) {
+  // store = vlastní filtr jedné obrazovky (stránka herce), jinak společný filtr aplikace
+  function fget(kind, store) {
+    if (store) return store[kind];
     if (kind !== 'type') return filt()[kind];
     var c = content();
     return c.movies && !c.series ? 'movie' : c.series && !c.movies ? 'tv' : '';
   }
-  function fset(kind, v) {
+  function fset(kind, v, store) {
+    if (store) { store[kind] = v; return; }
     if (kind !== 'type') { filt()[kind] = v; return; }
     var c = content();
     c.movies = v !== 'tv';
     c.series = v !== 'movie';
   }
-  function filterPill(kind, onChange) {
-    var steps = kind === 'type' ? ['', 'movie', 'tv'] : kind === 'imdb' ? IMDB_STEPS : kind === 'period' ? PERIOD_STEPS : kind === 'cz' ? (CFG.motnKey ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
+  function filterPill(kind, onChange, store) {
+    var steps = kind === 'type' ? ['', 'movie', 'tv'] : kind === 'imdb' ? IMDB_STEPS : kind === 'period' ? PERIOD_STEPS : kind === 'cz' ? (CFG.motnKey && !store ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
     function label() {
-      var v = fget(kind);
+      var v = fget(kind, store);
       if (kind === 'cz') return v === 'cs' ? 'Česká tvorba' : v === 'dub' ? 'Český dabing' : 'Jazyk: vše';
       if (kind === 'type') return v === 'movie' ? 'Filmy' : v === 'tv' ? 'Seriály' : 'Typ: vše';
       if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
@@ -1749,15 +1752,15 @@
       return 'RT: ' + (v ? v + ' %+' : 'vše');
     }
     var el = h('div', {
-      class: 'pill focusable' + (fget(kind) ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
+      class: 'pill focusable' + (fget(kind, store) ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
       onselect: function () {
         if ((kind === 'imdb' || kind === 'rt') && !hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr je potřeba vložit klíč OMDb v Nastavení → Klíče.' : 'Pro hodnocení a filtr je potřeba klíč OMDb (přenos z telefonu: Nastavení → Telefon).'); return; }
-        var i = steps.indexOf(fget(kind) || steps[0]);
-        fset(kind, steps[(i + 1) % steps.length]);
-        save('settings', settings);
+        var i = steps.indexOf(fget(kind, store) || steps[0]);
+        fset(kind, steps[(i + 1) % steps.length], store);
+        if (!store) save('settings', settings);
         el.textContent = label();
-        el.classList.toggle('on', !!fget(kind));
-        homeDirty = true;
+        el.classList.toggle('on', !!fget(kind, store));
+        if (!store) homeDirty = true;
         // překresli, až se přestane mačkat
         clearTimeout(refreshTimer);
         if (onChange) { refreshTimer = setTimeout(onChange, 700); return; }
@@ -1792,7 +1795,7 @@
       });
       bar.appendChild(h('span', { class: 'ctlsep' }));
     }
-    ['type', 'imdb', 'rt', 'period', 'cz'].forEach(function (k) { bar.appendChild(filterPill(k, opt.onFilter)); });
+    ['type', 'imdb', 'rt', 'period', 'cz'].forEach(function (k) { bar.appendChild(filterPill(k, opt.onFilter, opt.store)); });
     return bar;
   }
 
@@ -2973,70 +2976,94 @@
       head.appendChild(photo);
       head.appendChild(h('div', { class: 'ptext' }, [h('div', { class: 'gtitle', text: p.name }), h('div', { class: 'pmeta', text: bits.join(' · ') }),
         h('div', { class: 'pbio', text: p.biography || '' })]));
+      // tvorba: role (bez vystoupení „sám za sebe") a režie, scénář nebo tvůrce seriálu
       var seen = {}, list = [];
-      [].concat((p.combined_credits || {}).cast || [], (p.combined_credits || {}).crew || []).forEach(function (r) {
+      var cc = p.combined_credits || {};
+      [].concat((cc.cast || []).filter(function (r) { return !/^(self|himself|herself|themselves)\b/i.test(r.character || ''); }),
+        (cc.crew || []).filter(function (r) { return r.department === 'Directing' || r.department === 'Writing' || r.job === 'Creator'; })).forEach(function (r) {
         if (r.media_type !== 'movie' && r.media_type !== 'tv') return;
         var it = normalize(r);
-        if (seen[it.key]) return;
+        if (seen[it.key] || (!it.poster && !r.vote_count)) return;
         seen[it.key] = 1;
         it.pop = r.popularity || 0;
         list.push(it);
       });
       list.sort(function (a, b) { return b.pop - a.pop; });
-      list = list.slice(0, 60);
-      var found = 0, done = 0, avail = [], mineOf = {}, sort = 'popular', finished = false;
-      // seřaď a vyfiltruj nalezené tituly a vykresli je znovu (fokus zůstane na stejném titulu)
+      list = list.slice(0, 240);
+      // stránka má vlastní filtr a řazení, nezávislé na domovské obrazovce
+      var pf = { type: '', imdb: 0, rt: 0, period: '', cz: '' };
+      var scope = 'mine', sort = 'popular', mineOf = {}, checked = 0, scanned = 0, gen = 0;
+      function scan(upTo) {
+        var part = list.slice(scanned, upTo);
+        scanned = Math.max(scanned, upTo);
+        return Promise.all(part.map(function (it) {
+          return enqueue(function () { return providersFor(it); }).then(function (res) {
+            checked++;
+            if (res.mine.length) mineOf[it.key] = res.mine;
+            if (scope === 'mine' || checked % 20 === 0) status.textContent = 'Prohledáno ' + checked + ' z ' + Math.min(scanned, list.length) + ' titulů…';
+          }, function () { checked++; });
+        }));
+      }
       function redraw() {
-        var items = avail.slice();
+        var my = ++gen;
+        var items = list.filter(function (it) { return scope === 'all' || (mineOf[it.key] && !isHidden(it)); });
+        if (pf.type) items = items.filter(function (it) { return it.type === pf.type; });
+        if (pf.cz) items = items.filter(function (it) { return it.lang === 'cs'; });
+        var pr = periodRange(pf.period);
+        if (pr) items = items.filter(function (it) { var y = parseInt(it.year, 10); return y >= pr[0] && y <= pr[1]; });
+        var total = items.length;
         if (sort === 'rating') items.sort(function (a, b) { return b.vote - a.vote; });
-        else if (sort === 'newest') items.sort(function (a, b) { return (b.year || '0') > (a.year || '0') ? 1 : -1; });
-        else items.sort(function (a, b) { return b.pop - a.pop; });
-        var ty = fget('type');
-        if (ty) items = items.filter(function (it) { return it.type === ty; });
-        return applyFilter(items).then(function (res) {
-          if (currentScreen !== screens.person) return;
+        else if (sort === 'newest') items.sort(function (a, b) { return (b.year || '0') > (a.year || '0') ? 1 : (b.year || '0') < (a.year || '0') ? -1 : b.pop - a.pop; });
+        var byRating = (pf.imdb || pf.rt) && hasRatingsSource() && !omdbBlocked;
+        // šetři limit OMDb: tituly s nízkým hodnocením TMDB filtrem IMDb neprojdou
+        if (byRating && pf.imdb) items = items.filter(function (it) { return it.vote >= pf.imdb - 1.5; });
+        if (byRating) status.textContent = 'Ověřování hodnocení…';
+        var rated = !byRating ? Promise.resolve(items) : Promise.all(items.map(ratingsFor)).then(function (rs) {
+          return items.filter(function (it, i) { var r = rs[i]; return r && (!pf.imdb || r.imdb >= pf.imdb) && (!pf.rt || r.rt >= pf.rt); });
+        });
+        return rated.then(function (out) {
+          if (my !== gen || currentScreen !== screens.person) return;
           var fk = focused && focused.getAttribute('data-key');
           clear(grid);
-          res.items.forEach(function (it) {
+          out.forEach(function (it) {
             var c = card(it, 'pc-' + it.key);
-            setBadges(c, mineOf[it.key]);
+            setBadges(c, mineOf[it.key] || []);
+            if (scope === 'all') markHidden(c);
             grid.appendChild(c);
           });
           var again = fk && grid.querySelector('.card[data-key="' + fk + '"]');
           if (again) setFocus(again);
           else if (grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
-          if (finished) {
-            status.textContent = !found ? 'Ve vybraných službách nyní není žádný titul.'
-              : res.items.length ? 'Ve vybraných službách: ' + titulu(res.items.length) + (res.hidden ? ' (filtr skryl ' + res.hidden + ')' : '') + '.'
-              : 'Nic nesplňuje filtr ' + filterLabel() + '.';
-          }
+          var filtered = total - out.length || pf.type || pf.cz || pf.period;
+          status.textContent = out.length
+            ? (scope === 'all' ? 'Celá tvorba: ' : 'Ve vybraných službách: ') + titulu(out.length) + '.'
+            : filtered ? 'Nic nesplňuje nastavený filtr.'
+            : scope === 'all' ? 'Žádné tituly.' : 'Ve vybraných službách nyní není žádný titul. Všechny tituly ukáže Celá tvorba.';
         });
       }
+      var scopeEl = h('div', { class: 'gridtabs' });
+      [['mine', 'Ve vybraných službách'], ['all', 'Celá tvorba']].forEach(function (sd) {
+        var el = h('div', { class: 'pill focusable' + (scope === sd[0] ? ' on' : ''), 'data-fid': 'scope-' + sd[0], text: sd[1] });
+        el._select = function () {
+          if (scope === sd[0]) return;
+          Array.prototype.forEach.call(scopeEl.children, function (x) { x.classList.remove('on'); });
+          el.classList.add('on');
+          scope = sd[0];
+          redraw();
+          // dostupnost zbytku tvorby se dohledá na pozadí a štítky služeb se doplní
+          if (scope === 'all' && scanned < list.length) scan(list.length).then(function () { redraw(); });
+        };
+        scopeEl.appendChild(el);
+      });
+      sc.insertBefore(scopeEl, grid);
       sc.insertBefore(listControls({
         sorts: SORTS, sort: function () { return sort; },
         onSort: function (v) { sort = v; redraw(); },
-        onFilter: function () { redraw(); }
+        onFilter: function () { redraw(); },
+        store: pf
       }), grid);
-      return Promise.all(list.map(function (it) {
-        return enqueue(function () { return providersFor(it); }).then(function (res) {
-          done++;
-          if (res.mine.length && !isHidden(it)) {
-            found++;
-            avail.push(it);
-            mineOf[it.key] = res.mine;
-            if (!anyFilter()) {
-              var c = card(it, 'pc-' + it.key);
-              setBadges(c, res.mine);
-              grid.appendChild(c);
-              if (found === 1 && currentScreen === screens.person && (!focused || !document.body.contains(focused))) setFocus(c);
-            }
-          }
-          status.textContent = 'Prohledáno ' + done + ' z ' + list.length + ' titulů…';
-        }, function () { done++; });
-      })).then(function () {
-        finished = true;
-        return redraw();
-      });
+      // nejdřív nejznámější tituly; zbytek až při zobrazení celé tvorby
+      return scan(60).then(function () { return redraw(); });
     }).catch(function (err) { status.textContent = errorText(err); });
     return null;
   });

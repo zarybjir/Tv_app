@@ -36,6 +36,7 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
   popularity, hodnocení nebo data vydání
 - Řádky Nejlépe hodnocené, Skryté klenoty, Oscarové filmy a Klasika
 - Doporučení podle seznamu Chci vidět a zhlédnutých titulů
+- Stránky herců a tvůrců s celou tvorbou a vlastním filtrem
 - Detail titulu se žánry, délkou, zemí původu a možností zobrazit anglický popis
 - Trailery přehrávané přímo v aplikaci (telefon a web)
 - Hodnocení IMDb a Rotten Tomatoes s filtrem podle hodnocení

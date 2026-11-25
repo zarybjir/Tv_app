@@ -51,7 +51,13 @@ async function mock(page, keys) {
     const parts = u.pathname.split('/');
     calls.push(u.pathname + u.search);
     let body;
-    if (u.pathname.includes('/watch/providers')) body = { results: { CZ: { flatrate: [{ provider_id: PROVIDERS[+parts[3] % 6] }] } } };
+    if (u.pathname.includes('/watch/providers')) body = { results: { CZ: +parts[3] >= 5000 ? {} : { flatrate: [{ provider_id: PROVIDERS[+parts[3] % 6] }] } } };
+    else if (parts[2] === 'person') {
+      // 10 titulů ve vybraných službách, 10 mimo ně a jedno vystoupení „sám za sebe", které se nepočítá
+      const credit = (id, character) => ({ id, media_type: 'movie', title: 'Film ' + id, poster_path: '/p.svg', vote_average: 7, vote_count: 50, popularity: 100 - (id % 100), release_date: '2015-01-01', character });
+      body = { id: +parts[3], name: 'Jana Malá', biography: '', combined_credits: { crew: [],
+        cast: [...Array(10).keys()].map((i) => credit(i, 'Role')).concat([...Array(10).keys()].map((i) => credit(5000 + i, 'Role')), [credit(6000, 'Self')]) } };
+    }
     else if (u.pathname.includes('/discover/') || u.pathname.includes('/search/')) body = list(u.pathname.includes('/tv') ? 'tv' : 'movie', +(u.searchParams.get('page') || 1));
     else if (u.pathname.includes('/videos')) body = { results: [{ site: 'YouTube', key: 'abc123', type: 'Trailer', iso_639_1: 'en', official: true }] };
     else if (u.pathname.includes('/external_ids')) body = { imdb_id: 'tt' + parts[3] };
@@ -127,6 +133,24 @@ async function tv(browser, base) {
   const kinds = await page.evaluate(() => ({ label: document.querySelector('#screen-home [data-fid="nav-f-type"]').textContent,
     movies: document.querySelectorAll('#screen-home .card[data-key^="movie:"]').length, tv: document.querySelectorAll('#screen-home .card[data-key^="tv:"]').length }));
   check('filtr Filmy', kinds.label === 'Filmy' && kinds.movies > 20 && kinds.tv === 0, kinds);
+  // stránka herce: vlastní filtr (domovská obrazovka má právě Filmy) a celá tvorba
+  await page.evaluate(() => document.querySelector('#screen-home .card[data-key^="movie:"]').click());
+  await page.waitForTimeout(1200);
+  await select(page, 'p-1');
+  await page.waitForTimeout(1500);
+  const pcards = () => page.evaluate(() => document.querySelectorAll('#screen-person .card').length);
+  check('herec: tituly ve vybraných službách', await active(page) === 'screen-person' && await pcards() === 10, await pcards());
+  check('herec: vlastní filtr nepřebírá filtr z domovské obrazovky', await page.evaluate(() => document.querySelector('#screen-person [data-fid="nav-f-type"]').textContent) === 'Typ: vše');
+  await select(page, 'scope-all');
+  await page.waitForTimeout(1500);
+  check('herec: celá tvorba', await pcards() === 20, await pcards());
+  await select(page, 'nav-f-period');
+  await page.waitForTimeout(1000);
+  check('herec: filtr let platí jen pro tuto stránku', await pcards() === 0 && await page.evaluate(() => document.querySelector('#screen-person .gridstatus').textContent) === 'Nic nesplňuje nastavený filtr.');
+  await select(page, 'nav-home');
+  await page.waitForTimeout(800);
+  check('filtr let se nepropsal na domovskou obrazovku', await page.evaluate(() => document.querySelector('#screen-home [data-fid="nav-f-period"]').textContent) === 'Roky: vše');
+
   await select(page, 'nav-f-type');
   await select(page, 'nav-f-type');
   await page.waitForTimeout(2000);

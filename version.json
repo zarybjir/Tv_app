@@ -1,7 +1,7 @@
 {
-  "version": "1.32.0",
+  "version": "1.33.0",
   "minShell": 1,
-  "notes": "Filtr Filmy/Seriály na domovské obrazovce a v seznamech, tlačítka Zpět a Domů na všech obrazovkách.",
+  "notes": "Stránka herce má vlastní filtr a zobrazí i celou tvorbu, nejen tituly ve vybraných službách.",
   "files": [
     "css/style.css",
     "js/services.js",
