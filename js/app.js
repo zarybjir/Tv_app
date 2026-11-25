@@ -1431,11 +1431,26 @@
     return el;
   }
 
+  // návrat rovnou na domovskou obrazovku (na místo, kde se z ní odešlo)
+  function goHome() {
+    closeTrailer();
+    if (!history.length) return;
+    history.length = 1;
+    back();
+  }
+  // tlačítka Zpět (jen dotyk; televize má tlačítko na ovladači) a Domů pro všechny obrazovky kromě domovské
+  function navButtons() {
+    if (!currentScreen || currentScreen.name === 'home') return [];
+    return [
+      MOBILE ? h('div', { class: 'pill navpill focusable', 'data-fid': 'nav-back', text: '‹ Zpět', onselect: function () { back(); } }) : null,
+      h('div', { class: 'pill navpill focusable', 'data-fid': 'nav-home', text: 'Domů', onselect: goHome })
+    ];
+  }
   function topbar(extra) {
     return h('div', { class: 'topbar' }, [
       h('div', { class: 'brand' }, ['Video', h('span', { text: 'téka' })]),
       h('div', { class: 'spacer' })
-    ].concat(extra || []).concat([clock()]));
+    ].concat(navButtons()).concat(extra || []).concat([clock()]));
   }
 
   // ------------------------------------------------------------------ dostupnost titulu v aktuální zemi
@@ -1711,24 +1726,37 @@
 
   // ------------------------------------------------------------------ DOMŮ
   var refreshTimer = null;
+  // hodnota filtru; typ (filmy/seriály) se ukládá v nastavení obsahu, ostatní ve filt()
+  function fget(kind) {
+    if (kind !== 'type') return filt()[kind];
+    var c = content();
+    return c.movies && !c.series ? 'movie' : c.series && !c.movies ? 'tv' : '';
+  }
+  function fset(kind, v) {
+    if (kind !== 'type') { filt()[kind] = v; return; }
+    var c = content();
+    c.movies = v !== 'tv';
+    c.series = v !== 'movie';
+  }
   function filterPill(kind, onChange) {
-    var steps = kind === 'imdb' ? IMDB_STEPS : kind === 'period' ? PERIOD_STEPS : kind === 'cz' ? (CFG.motnKey ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
+    var steps = kind === 'type' ? ['', 'movie', 'tv'] : kind === 'imdb' ? IMDB_STEPS : kind === 'period' ? PERIOD_STEPS : kind === 'cz' ? (CFG.motnKey ? ['', 'cs', 'dub'] : ['', 'cs']) : RT_STEPS;
     function label() {
-      var v = filt()[kind];
+      var v = fget(kind);
       if (kind === 'cz') return v === 'cs' ? 'Česká tvorba' : v === 'dub' ? 'Český dabing' : 'Jazyk: vše';
+      if (kind === 'type') return v === 'movie' ? 'Filmy' : v === 'tv' ? 'Seriály' : 'Typ: vše';
       if (kind === 'imdb') return 'IMDb: ' + (v ? dec(v) + '+' : 'vše');
       if (kind === 'period') return 'Roky: ' + periodLabel(v);
       return 'RT: ' + (v ? v + ' %+' : 'vše');
     }
     var el = h('div', {
-      class: 'pill focusable' + (filt()[kind] ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
+      class: 'pill focusable' + (fget(kind) ? ' on' : ''), 'data-fid': 'nav-f-' + kind, text: label(),
       onselect: function () {
         if ((kind === 'imdb' || kind === 'rt') && !hasRatingsSource()) { toast(MOBILE ? 'Pro hodnocení a filtr je potřeba vložit klíč OMDb v Nastavení → Klíče.' : 'Pro hodnocení a filtr je potřeba klíč OMDb (přenos z telefonu: Nastavení → Telefon).'); return; }
-        var i = steps.indexOf(filt()[kind] || steps[0]);
-        filt()[kind] = steps[(i + 1) % steps.length];
+        var i = steps.indexOf(fget(kind) || steps[0]);
+        fset(kind, steps[(i + 1) % steps.length]);
         save('settings', settings);
         el.textContent = label();
-        el.classList.toggle('on', !!filt()[kind]);
+        el.classList.toggle('on', !!fget(kind));
         homeDirty = true;
         // překresli, až se přestane mačkat
         clearTimeout(refreshTimer);
@@ -1764,7 +1792,7 @@
       });
       bar.appendChild(h('span', { class: 'ctlsep' }));
     }
-    ['imdb', 'rt', 'period', 'cz'].forEach(function (k) { bar.appendChild(filterPill(k, opt.onFilter)); });
+    ['type', 'imdb', 'rt', 'period', 'cz'].forEach(function (k) { bar.appendChild(filterPill(k, opt.onFilter)); });
     return bar;
   }
 
@@ -1774,7 +1802,7 @@
     var searchBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-search', text: 'Hledat', onselect: function () { go('search', { q: '' }); } });
     var setBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-settings', text: 'Nastavení', onselect: function () { go('settings'); } });
     var calBtn = h('div', { class: 'pill focusable', 'data-fid': 'nav-cal', text: 'Kalendář', onselect: function () { go('calendar'); } });
-    root.appendChild(topbar([searchBtn, filterPill('imdb'), filterPill('rt'), filterPill('period'), filterPill('cz'), calBtn, setBtn]));
+    root.appendChild(topbar([searchBtn, filterPill('type'), filterPill('imdb'), filterPill('rt'), filterPill('period'), filterPill('cz'), calBtn, setBtn]));
 
     var body = h('div', { class: 'vscroll', style: 'top:140px' });
     root.appendChild(body);
@@ -2155,6 +2183,7 @@
       info
     ]));
     root.appendChild(h('div', { class: 'hintbar', text: 'OK otevře aplikaci služby · Zpět vrátí na předchozí obrazovku' }));
+    root.appendChild(h('div', { class: 'detailnav' }, navButtons()));
 
     var foundServices = [];
     var listBtn = h('div', {
@@ -2962,6 +2991,8 @@
         if (sort === 'rating') items.sort(function (a, b) { return b.vote - a.vote; });
         else if (sort === 'newest') items.sort(function (a, b) { return (b.year || '0') > (a.year || '0') ? 1 : -1; });
         else items.sort(function (a, b) { return b.pop - a.pop; });
+        var ty = fget('type');
+        if (ty) items = items.filter(function (it) { return it.type === ty; });
         return applyFilter(items).then(function (res) {
           if (currentScreen !== screens.person) return;
           var fk = focused && focused.getAttribute('data-key');

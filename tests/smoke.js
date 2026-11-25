@@ -106,13 +106,30 @@ async function tv(browser, base) {
   await page.waitForTimeout(1500);
   check('detail se žánry', await active(page) === 'screen-detail' && await page.evaluate(() => document.querySelectorAll('#screen-detail .dgenres span').length === 2));
   check('trailer se v televizi nenabízí', await page.evaluate(() => !document.querySelector('[data-fid="d-trailer"]')));
+  check('tlačítko Domů v detailu i v seznamu', await page.evaluate(() => !!document.querySelector('#screen-detail [data-fid="nav-home"]') && !!document.querySelector('#screen-grid [data-fid="nav-home"]')));
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);
   const after = await page.evaluate(() => document.querySelector('#screen-grid .vscroll').scrollTop);
   check('návrat do seznamu bez posunu na začátek', await active(page) === 'screen-grid' && after > 0, { after });
   check('fokus zůstal na stejném titulu', await page.evaluate(() => { const f = document.querySelector('.focus'); return f && f.getAttribute('data-fid'); }) === picked);
+  // ze seznamu do detailu a tlačítkem Domů rovnou na domovskou obrazovku
+  await page.evaluate(() => document.querySelectorAll('#screen-grid .card')[2].click());
+  await page.waitForTimeout(800);
+  await select(page, 'nav-home');
+  await page.waitForTimeout(600);
+  check('Domů vrací na domovskou obrazovku', await active(page) === 'screen-home');
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(500);
+  check('po Domů už není kam se vracet', await active(page) === 'screen-home');
+
+  // filtr typu: jen filmy → v řádcích nezůstane žádný seriál
+  await select(page, 'nav-f-type');
+  await page.waitForTimeout(2500);
+  const kinds = await page.evaluate(() => ({ label: document.querySelector('#screen-home [data-fid="nav-f-type"]').textContent,
+    movies: document.querySelectorAll('#screen-home .card[data-key^="movie:"]').length, tv: document.querySelectorAll('#screen-home .card[data-key^="tv:"]').length }));
+  check('filtr Filmy', kinds.label === 'Filmy' && kinds.movies > 20 && kinds.tv === 0, kinds);
+  await select(page, 'nav-f-type');
+  await select(page, 'nav-f-type');
+  await page.waitForTimeout(2000);
 
   await select(page, 'nav-settings');
   await page.waitForTimeout(400);
@@ -161,6 +178,7 @@ async function android(browser, base) {
   await page.evaluate(() => document.querySelector('#screen-detail .btn.play').click());
   await page.waitForTimeout(500);
   check('přehrání otevře titul ve službě', await page.evaluate(() => window.__a.some((x) => x.indexOf('open https://sluzba.example/title/') === 0)), await page.evaluate(() => window.__a));
+  check('tlačítka Zpět a Domů v detailu', await page.evaluate(() => !!document.querySelector('#screen-detail [data-fid="nav-back"]') && !!document.querySelector('#screen-detail [data-fid="nav-home"]')));
   check('bez chyb v konzoli', errs.length === 0, errs);
   await ctx.close();
 }

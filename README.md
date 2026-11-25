@@ -39,7 +39,7 @@ a jedním výběrem je otevírá v aplikaci příslušné služby.
 - Detail titulu se žánry, délkou, zemí původu a možností zobrazit anglický popis
 - Trailery přehrávané přímo v aplikaci (telefon a web)
 - Hodnocení IMDb a Rotten Tomatoes s filtrem podle hodnocení
-- Filtr podle období vydání, české tvorby a českého dabingu
+- Filtr podle typu (filmy, seriály), období vydání, české tvorby a českého dabingu
 - Nově přidané a brzy odcházející tituly, kalendář nových dílů
 - Seznam Chci vidět, skrývání zhlédnutých a nezajímavých titulů
 - Přímé otevření titulu v aplikaci služby (Android)

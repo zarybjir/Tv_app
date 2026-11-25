@@ -609,3 +609,16 @@ html.mobile body { padding-top: env(safe-area-inset-top); padding-left: env(safe
 .mobile .minput, .mobile .scard .minput, .mobile input { font-size: 16px; }
 html.mobile, html.mobile body { -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
 .mobile .focusable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+/* ---------- Zpět a Domů ---------- */
+.detailnav { position: absolute; right: 96px; top: 44px; z-index: 5; }
+.detailnav .pill { margin-left: 14px; }
+.detailnav .pill:not(.focus) { background: rgba(27,32,43,.85); }
+.mobile .detailnav { right: auto; left: 16px; top: 14px; }
+.mobile .detailnav .pill { margin: 0 8px 0 0; }
+.mobile .navpill, .mobile .navpill.focus { background: #2c3546; color: #f2f4f8; }
+
+/* horní lišta: štítky se nelámou a vejdou se vedle sebe */
+.topbar .pill { white-space: nowrap; flex: none; padding: 12px 18px; margin-left: 10px; font-size: 24px; }
+.topbar .clock { margin-left: 24px; min-width: 0; }
+.mobile .topbar .pill { padding: 7px 13px; margin: 0 8px 8px 0; font-size: 15px; }
