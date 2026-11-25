@@ -44,7 +44,7 @@ async function mock(page, keys) {
   await page.route('https://ntfy.sh/**', (r) => r.abort());
   await page.route('https://www.youtube-nocookie.com/**', (r) => r.fulfill({ contentType: 'text/html', body: '<html></html>' }));
   await page.route('https://api.watchmode.com/**', (r) => r.fulfill({ json: ['Netflix', 'HBO Max', 'Disney+', 'Prime Video', 'Apple TV+', 'SkyShowtime'].map((n) => ({ name: n, type: 'sub', region: 'CZ', web_url: 'https://sluzba.example/title/80057281' })) }));
-  await page.route('https://www.omdbapi.com/**', (r) => r.fulfill({ json: { Response: 'True', imdbRating: '7.6', imdbVotes: '120,000', Awards: 'Won 2 Oscars.', Ratings: [{ Source: 'Rotten Tomatoes', Value: '88%' }] } }));
+  await page.route('https://www.omdbapi.com/**', (r) => { calls.push('omdb'); return r.fulfill({ json: { Response: 'True', imdbRating: '7.6', imdbVotes: '120,000', Awards: 'Won 2 Oscars.', Ratings: [{ Source: 'Rotten Tomatoes', Value: '88%' }] } }); });
   await page.route('https://image.tmdb.org/**', (r) => r.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="342" height="513"><rect width="342" height="513" fill="#345"/></svg>' }));
   await page.route('https://api.themoviedb.org/**', (r) => {
     const u = new URL(r.request().url());
@@ -133,7 +133,7 @@ async function tv(browser, base) {
   const kinds = await page.evaluate(() => ({ label: document.querySelector('#screen-home [data-fid="nav-f-type"]').textContent,
     movies: document.querySelectorAll('#screen-home .card[data-key^="movie:"]').length, tv: document.querySelectorAll('#screen-home .card[data-key^="tv:"]').length }));
   check('filtr Filmy', kinds.label === 'Filmy' && kinds.movies > 20 && kinds.tv === 0, kinds);
-  // stránka herce: vlastní filtr (domovská obrazovka má právě Filmy)
+  // stránka herce: vlastní filtr (domovská obrazovka má právě Filmy) a celá tvorba bez OMDb
   await page.evaluate(() => document.querySelector('#screen-home .card[data-key^="movie:"]').click());
   await page.waitForTimeout(1200);
   await select(page, 'p-1');
@@ -141,6 +141,12 @@ async function tv(browser, base) {
   const pcards = () => page.evaluate(() => document.querySelectorAll('#screen-person .card').length);
   check('herec: tituly ve vybraných službách', await active(page) === 'screen-person' && await pcards() === 10, await pcards());
   check('herec: vlastní filtr nepřebírá filtr z domovské obrazovky', await page.evaluate(() => document.querySelector('#screen-person [data-fid="nav-f-type"]').textContent) === 'Typ: vše');
+  const omdb = () => calls.filter((c) => c === 'omdb').length;
+  const omdbBefore = omdb();
+  await select(page, 'scope-all');
+  await page.waitForTimeout(2000);
+  check('herec: celá tvorba', await pcards() === 20, await pcards());
+  check('herec: celá tvorba nečerpá limit OMDb', omdb() === omdbBefore && await page.evaluate(() => /TMDB/.test(document.querySelector('#screen-person .card[data-key="movie:5000"] .rbar').textContent)), omdb() - omdbBefore);
   await select(page, 'nav-f-period');
   await page.waitForTimeout(1000);
   check('herec: filtr let platí jen pro tuto stránku', await pcards() === 0 && await page.evaluate(() => document.querySelector('#screen-person .gridstatus').textContent) === 'Nic nesplňuje nastavený filtr.');

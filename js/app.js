@@ -1380,7 +1380,8 @@
     }).catch(function () {});
   }
 
-  function card(item, fid, serviceIds) {
+  // freeRatings: nenačítej hodnocení z OMDb (šetří limit), ukaž uložené nebo hodnocení TMDB
+  function card(item, fid, serviceIds, freeRatings) {
     var poster = h('div', { class: 'poster' }, [
       item.poster
         ? h('img', { src: IMG + 'w342' + item.poster, alt: '' })
@@ -1408,7 +1409,13 @@
     var lv = leavingTs(item.key);
     if (lv) poster.appendChild(h('div', { class: 'leavetag', text: 'odchází ' + fmtTs(lv) }));
     else if (item.change && item.change.ts && fid && fid.indexOf('new-') === 0) poster.appendChild(h('div', { class: 'addtag', text: 'přidáno ' + fmtTs(item.change.ts) }));
-    fillRatings(el, item);
+    if (!freeRatings) fillRatings(el, item);
+    else {
+      var cr = cachedRatings(item);
+      var chips = cr && (cr.imdb != null || cr.rt != null) ? ratingChips(cr)
+        : item.vote ? [h('span', { class: 'rchip mc', text: 'TMDB ' + dec(item.vote, 1) })] : [];
+      chips.forEach(function (c) { poster.querySelector('.rbar').appendChild(c); });
+    }
     if (hiddenItems[item.key]) markHidden(el);
     return el;
   }
@@ -2989,22 +2996,25 @@
         list.push(it);
       });
       list.sort(function (a, b) { return b.pop - a.pop; });
+      // celá tvorba (jen data TMDB, bez dotazů na OMDb); dostupnost se hledá u 60 nejznámějších titulů
+      var all = list.slice(0, 240);
       list = list.slice(0, 60);
       // stránka má vlastní filtr a řazení, nezávislé na domovské obrazovce
       var pf = { type: '', imdb: 0, rt: 0, period: '', cz: '' };
-      var sort = 'popular', mineOf = {}, checked = 0, gen = 0;
-      function scan() {
-        return Promise.all(list.map(function (it) {
+      var sort = 'popular', scope = 'mine', restScanned = false, mineOf = {}, checked = 0, gen = 0;
+      function scan(part) {
+        return Promise.all(part.map(function (it) {
           return enqueue(function () { return providersFor(it); }).then(function (res) {
             checked++;
             if (res.mine.length) mineOf[it.key] = res.mine;
-            status.textContent = 'Prohledáno ' + checked + ' z ' + list.length + ' titulů…';
+            if (scope === 'mine') status.textContent = 'Prohledáno ' + checked + ' z ' + list.length + ' titulů…';
           }, function () { checked++; });
         }));
       }
       function redraw() {
         var my = ++gen;
-        var items = list.filter(function (it) { return mineOf[it.key] && !isHidden(it); });
+        var whole = scope === 'all';
+        var items = whole ? all.slice() : list.filter(function (it) { return mineOf[it.key] && !isHidden(it); });
         if (pf.type) items = items.filter(function (it) { return it.type === pf.type; });
         if (pf.cz) items = items.filter(function (it) { return it.lang === 'cs'; });
         var pr = periodRange(pf.period);
@@ -3012,7 +3022,10 @@
         var total = items.length;
         if (sort === 'rating') items.sort(function (a, b) { return b.vote - a.vote; });
         else if (sort === 'newest') items.sort(function (a, b) { return (b.year || '0') > (a.year || '0') ? 1 : (b.year || '0') < (a.year || '0') ? -1 : b.pop - a.pop; });
-        var byRating = (pf.imdb || pf.rt) && hasRatingsSource() && !omdbBlocked;
+        // v celé tvorbě se filtr hodnocení řídí hodnocením TMDB, ať nespotřebovává limit OMDb
+        if (whole && pf.imdb) items = items.filter(function (it) { return it.vote >= pf.imdb; });
+        if (whole && pf.rt) items = items.filter(function (it) { return it.vote >= pf.rt / 10 - 1; });
+        var byRating = !whole && (pf.imdb || pf.rt) && hasRatingsSource() && !omdbBlocked;
         // šetři limit OMDb: tituly s nízkým hodnocením TMDB filtrem IMDb neprojdou
         if (byRating && pf.imdb) items = items.filter(function (it) { return it.vote >= pf.imdb - 1.5; });
         if (byRating) status.textContent = 'Ověřování hodnocení…';
@@ -3024,8 +3037,8 @@
           var fk = focused && focused.getAttribute('data-key');
           clear(grid);
           out.forEach(function (it) {
-            var c = card(it, 'pc-' + it.key);
-            setBadges(c, mineOf[it.key]);
+            var c = card(it, 'pc-' + it.key, null, whole);
+            setBadges(c, mineOf[it.key] || []);
             grid.appendChild(c);
           });
           var again = fk && grid.querySelector('.card[data-key="' + fk + '"]');
@@ -3033,18 +3046,34 @@
           else if (grid.firstChild && (!focused || !document.body.contains(focused))) setFocus(grid.firstChild);
           var filtered = total - out.length || pf.type || pf.cz || pf.period;
           status.textContent = out.length
-            ? 'Ve vybraných službách: ' + titulu(out.length) + '.'
+            ? (whole ? 'Celá tvorba: ' + titulu(out.length) + '. Hodnocení a filtr podle TMDB; IMDb a RT jsou v detailu titulu.'
+              : 'Ve vybraných službách: ' + titulu(out.length) + '.')
             : filtered ? 'Nic nesplňuje nastavený filtr.'
-            : 'Ve vybraných službách nyní není žádný titul.';
+            : whole ? 'Žádné tituly.' : 'Ve vybraných službách nyní není žádný titul. Všechny tituly ukáže Celá tvorba.';
         });
       }
+      var scopeEl = h('div', { class: 'gridtabs' });
+      [['mine', 'Ve vybraných službách'], ['all', 'Celá tvorba']].forEach(function (sd) {
+        var el = h('div', { class: 'pill focusable' + (scope === sd[0] ? ' on' : ''), 'data-fid': 'scope-' + sd[0], text: sd[1] });
+        el._select = function () {
+          if (scope === sd[0]) return;
+          Array.prototype.forEach.call(scopeEl.children, function (x) { x.classList.remove('on'); });
+          el.classList.add('on');
+          scope = sd[0];
+          redraw();
+          // dostupnost zbytku tvorby (TMDB) se dohledá na pozadí a štítky služeb se doplní
+          if (scope === 'all' && !restScanned) { restScanned = true; scan(all.slice(60)).then(function () { if (scope === 'all') redraw(); }); }
+        };
+        scopeEl.appendChild(el);
+      });
+      sc.insertBefore(scopeEl, grid);
       sc.insertBefore(listControls({
         sorts: SORTS, sort: function () { return sort; },
         onSort: function (v) { sort = v; redraw(); },
         onFilter: function () { redraw(); },
         store: pf
       }), grid);
-      return scan().then(function () { return redraw(); });
+      return scan(list).then(function () { return redraw(); });
     }).catch(function (err) { status.textContent = errorText(err); });
     return null;
   });
